@@ -190,7 +190,7 @@ widget_order = [
 
 [plugin_settings."noctalia/mpvpaper"]
 mpv_options = "panscan=1.0"
-video_directory = "@HOME@/Videos/Wallpapers"
+video_directory = "@HOME@/Pictures/Wallpapers"
 
 [plugins]
 enabled = [ "micahg/nwg-displays", "felipeartur/ai-usagebar", "tadomika_ari/w-engine", "noctalia/mpvpaper" ]

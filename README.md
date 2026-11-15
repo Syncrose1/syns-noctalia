@@ -48,6 +48,7 @@ curl -fsSL https://raw.githubusercontent.com/Syncrose1/syns-noctalia/main/instal
 - Dolphin tiles; Qt/KDE apps follow Noctalia's colours (`QT_QPA_PLATFORMTHEME=kde`)
 - UK keyboard, normal pointer acceleration
 - AI Usage in the bar (Claude Code, SuperGrok, …) via the `ai-usagebar` plugin; display profiles via the `nwg-displays` plugin (`/nwg` in the launcher)
+- Video and GIF wallpapers via the `mpvpaper` plugin (film icon on the bar): drop files into `~/Pictures/Wallpapers`, shared with still wallpapers. Pauses when covered; slideshows supported. The installer can link your Wallpaper Engine video wallpapers in
 - Live wallpapers from your Steam Wallpaper Engine library via the `w-engine` plugin (`linux-wallpaperengine`)
 - Kitty at 85% opacity: **Ctrl+Alt+↑/↓** to adjust, **Ctrl+Alt+0** to reset; closes without confirming
 

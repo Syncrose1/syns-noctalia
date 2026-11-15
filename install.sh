@@ -456,17 +456,17 @@ fi
 
 # ---------- video wallpapers ----------
 step "Video wallpapers (mpvpaper plugin)"
-run mkdir -p "$HOME/Videos/Wallpapers"
-ok "Drop videos or GIFs into ~/Videos/Wallpapers and pick them from the bar's film icon"
+run mkdir -p "$HOME/Pictures/Wallpapers"
+ok "Videos and GIFs in ~/Pictures/Wallpapers (shared with still wallpapers) appear under the bar's film icon"
 WE_WORKSHOP="$HOME/.local/share/Steam/steamapps/workshop/content/431960"
-if [ -d "$WE_WORKSHOP" ] && command -v jq >/dev/null && ask "Link your Wallpaper Engine video wallpapers into ~/Videos/Wallpapers (no copies)?" Y; then
+if [ -d "$WE_WORKSHOP" ] && command -v jq >/dev/null && ask "Link your Wallpaper Engine video wallpapers into ~/Pictures/Wallpapers (no copies)?" Y; then
     linked=0
     for proj in "$WE_WORKSHOP"/*/project.json; do
         [ "$(jq -r '.type // "" | ascii_downcase' "$proj" 2>/dev/null)" = video ] || continue
         file="$(dirname "$proj")/$(jq -r '.file // ""' "$proj")"
         [ -f "$file" ] || continue
         name=$(jq -r '.title // "wallpaper"' "$proj" | tr -d '[]【】|/\\:*?"<>' | tr -s ' ' | cut -c1-60 | sed 's/ *$//')
-        link="$HOME/Videos/Wallpapers/${name:-wallpaper}.${file##*.}"
+        link="$HOME/Pictures/Wallpapers/${name:-wallpaper}.${file##*.}"
         [ -e "$link" ] || { run ln -s "$file" "$link"; linked=$((linked + 1)); }
     done
     ok "Linked $linked video wallpaper(s)"
