@@ -38,5 +38,12 @@ require("config.workspaces")
 require("user.shared")
 if host.setup then host.setup() end
 
+-- Display layout saved by the monitor utility (nwg-displays), if any. Loaded last so it wins.
+for _, file in ipairs({ "monitors.lua", "workspaces.lua" }) do
+    local path = os.getenv("HOME") .. "/.config/hypr/" .. file
+    local fh = io.open(path, "r")
+    if fh then fh:close() dofile(path) end
+end
+
 -- For Noctalia Color templates
 require("noctalia").apply_theme()

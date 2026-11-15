@@ -37,6 +37,7 @@ curl -fsSL https://raw.githubusercontent.com/Syncrose1/syns-noctalia/main/instal
 - Workspaces always visible and split across monitors (per machine, see below)
 - Scroll on the empty left half of the bar for brightness, right half for volume
 - External monitor brightness over DDC/CI
+- Monitor utility: **Displays Settings** in the launcher (nwg-displays) to drag monitors around and set resolution, refresh rate, scale and rotation. It asks to keep the change and reverts otherwise; the layout is saved to `~/.config/hypr/monitors.lua`, which loads last
 - Flush bar, Inter font, slim workspace dots, quiet status icons that reveal on hover
 - Dolphin tiles; Qt/KDE apps follow Noctalia's colours (`QT_QPA_PLATFORMTHEME=kde`)
 - UK keyboard, normal pointer acceleration
@@ -49,6 +50,7 @@ curl -fsSL https://raw.githubusercontent.com/Syncrose1/syns-noctalia/main/instal
 | CachyOS (stock, refreshed from `/etc/skel`) | `~/.config/hypr/config/*.lua`, `kitty/cachyos.conf`, `uwsm/env.cachyos`, `noctalia/config.toml` |
 | This repo | `~/.config/hypr/hyprland.lua`, `~/.config/hypr/user/`, `kitty/kitty.conf`, `uwsm/env`, Noctalia's `settings.toml`, `~/.local/bin/{bar-scroll,ocr-region,sync-cachyos-config}` |
 | Noctalia (generated) | `~/.config/hypr/noctalia.lua`, `kitty/themes/noctalia.conf` |
+| Monitor utility (per machine) | `~/.config/hypr/monitors.lua`, `~/.config/hypr/workspaces.lua` |
 
 `hyprland.lua` loads CachyOS's modules in their stock order, then `user/shared.lua` (every machine),
 then `user/hosts/<hostname>.lua` (this machine's monitors and workspaces). Later settings win, so the
@@ -70,4 +72,4 @@ Hyprland for that). Tweak modes, positions and scale there, then copy it into th
 ## Requirements
 
 CachyOS (or the CachyOS repos) for `cachyos-hypr-noctalia`. The installer adds `grimblast-git`,
-`inter-font`, `jq`, `bc`, `tesseract`, `tesseract-data-eng` and `imagemagick`, using `pacman -S --needed` (no full system upgrade).
+`inter-font`, `jq`, `bc`, `tesseract`, `tesseract-data-eng`, `imagemagick` and `nwg-displays`, using `pacman -S --needed` (no full system upgrade).

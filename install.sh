@@ -18,7 +18,7 @@ REPO="Syncrose1/syns-noctalia"
 BRANCH="${SYNS_NOCTALIA_BRANCH:-main}"
 STATE="$HOME/.local/state/syns-noctalia"
 SKEL=/etc/skel
-PACKAGES=(cachyos-hypr-noctalia grimblast-git inter-font jq bc tesseract tesseract-data-eng imagemagick)
+PACKAGES=(cachyos-hypr-noctalia grimblast-git inter-font jq bc tesseract tesseract-data-eng imagemagick nwg-displays)
 
 YES=false DRY=false NOPKG=false UNINSTALL=false
 usage() {

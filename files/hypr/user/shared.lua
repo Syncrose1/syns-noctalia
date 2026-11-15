@@ -73,3 +73,6 @@ hl.bind("CTRL + SUPER + T", hl.dsp.exec_cmd("noctalia msg panel-toggle wallpaper
 
 -- Super+Shift+T: drag a region (or click a window) and copy its text, OCR'd offline with tesseract
 hl.bind("SUPER + SHIFT + T", hl.dsp.exec_cmd("~/.local/bin/ocr-region"), { description = "OCR: copy text from a region" })
+
+-- Monitor utility (nwg-displays) opens as a floating settings window
+hl.window_rule({ match = { class = "^(nwg-displays)$" }, float = true, center = true, size = { "monitor_w*0.6", "monitor_h*0.7" } })
