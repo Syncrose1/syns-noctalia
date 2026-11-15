@@ -51,7 +51,7 @@ widget_order = [ "desktop-widget-0000000000000001", "desktop-widget-000000000000
     box_height = 480.0
     box_width = 800.0
     cx = 1440.0
-    cy = 732.0
+    cy = 732.00006103515625
     output = "eDP-1"
     placement_height = 1080.0
     placement_width = 1920.0
@@ -179,7 +179,7 @@ widget_order = [
     type = "weather"
 
 [plugins]
-enabled = [ "tadomika_ari/w-engine" ]
+enabled = [ "tadomika_ari/w-engine", "micahg/nwg-displays" ]
 
 [shell]
 font_family = "Inter"
