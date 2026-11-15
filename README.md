@@ -27,6 +27,8 @@ curl -fsSL https://raw.githubusercontent.com/Syncrose1/syns-noctalia/main/instal
 - Tap **Super** for the launcher (Super+Space also works)
 - **Super+1…0**: workspace 1–10 · **Super+Shift+N**: move window there · **Super+Alt+N**: send it without following
 - **Super+Shift+S**: screenshot. Drag to crop, or click a window (grimblast); saved to `~/Pictures/Screenshots` and copied
+- **Super+Shift+T**: OCR. Drag a region (or click a window) and its text is copied to the clipboard; offline via tesseract, no API key
+- **Ctrl+Super+T**: wallpaper picker
 - **Ctrl+Alt+Delete**: session menu (lock, log out, suspend, reboot, shut down)
 - **Super+Alt+S**: send window to the scratchpad (Super+S shows it)
 - Super+scroll switches workspaces
@@ -45,7 +47,7 @@ curl -fsSL https://raw.githubusercontent.com/Syncrose1/syns-noctalia/main/instal
 | Owner | Files |
 |---|---|
 | CachyOS (stock, refreshed from `/etc/skel`) | `~/.config/hypr/config/*.lua`, `kitty/cachyos.conf`, `uwsm/env.cachyos`, `noctalia/config.toml` |
-| This repo | `~/.config/hypr/hyprland.lua`, `~/.config/hypr/user/`, `kitty/kitty.conf`, `uwsm/env`, Noctalia's `settings.toml`, `~/.local/bin/{bar-scroll,sync-cachyos-config}` |
+| This repo | `~/.config/hypr/hyprland.lua`, `~/.config/hypr/user/`, `kitty/kitty.conf`, `uwsm/env`, Noctalia's `settings.toml`, `~/.local/bin/{bar-scroll,ocr-region,sync-cachyos-config}` |
 | Noctalia (generated) | `~/.config/hypr/noctalia.lua`, `kitty/themes/noctalia.conf` |
 
 `hyprland.lua` loads CachyOS's modules in their stock order, then `user/shared.lua` (every machine),
@@ -68,4 +70,4 @@ Hyprland for that). Tweak modes, positions and scale there, then copy it into th
 ## Requirements
 
 CachyOS (or the CachyOS repos) for `cachyos-hypr-noctalia`. The installer adds `grimblast-git`,
-`inter-font`, `jq` and `bc`, using `pacman -S --needed` (no full system upgrade).
+`inter-font`, `jq`, `bc`, `tesseract`, `tesseract-data-eng` and `imagemagick`, using `pacman -S --needed` (no full system upgrade).

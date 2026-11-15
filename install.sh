@@ -18,7 +18,7 @@ REPO="Syncrose1/syns-noctalia"
 BRANCH="${SYNS_NOCTALIA_BRANCH:-main}"
 STATE="$HOME/.local/state/syns-noctalia"
 SKEL=/etc/skel
-PACKAGES=(cachyos-hypr-noctalia grimblast-git inter-font jq bc)
+PACKAGES=(cachyos-hypr-noctalia grimblast-git inter-font jq bc tesseract tesseract-data-eng imagemagick)
 
 YES=false DRY=false NOPKG=false UNINSTALL=false
 usage() {
@@ -164,6 +164,7 @@ MANAGED=(
     .config/qt6ct/qt6ct.conf
     .local/bin/bar-scroll
     .local/bin/sync-cachyos-config
+    .local/bin/ocr-region
 )
 step "Backing up your current configs"
 run mkdir -p "$BACKUP/files"
@@ -219,8 +220,8 @@ if [ ! -f "$HOME/.config/hypr/noctalia.lua" ]; then
 fi
 run cp "$SRC/kitty/kitty.conf" "$HOME/.config/kitty/kitty.conf"
 run cp "$SRC/uwsm/env" "$HOME/.config/uwsm/env"
-run install -m755 "$SRC/bin/bar-scroll" "$SRC/bin/sync-cachyos-config" "$HOME/.local/bin/"
-ok "Keybinds, workspaces, theming, kitty, bar scrolling and sync script"
+run install -m755 "$SRC/bin/bar-scroll" "$SRC/bin/sync-cachyos-config" "$SRC/bin/ocr-region" "$HOME/.local/bin/"
+ok "Keybinds, workspaces, theming, kitty, bar scrolling, OCR and sync script"
 
 # ---------- this machine ----------
 HOST=${SYNS_NOCTALIA_HOST:-$(cat /etc/hostname 2>/dev/null || hostname)}

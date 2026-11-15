@@ -1,0 +1,28 @@
+#!/bin/sh
+# Drag to select a region (or click a window) and copy the text in it to the clipboard.
+# Fully offline: tesseract does the recognition. Usage: ocr-region [image]  (an image path skips selection)
+# Language: OCR_LANG=eng+deu ocr-region   (needs the matching tesseract-data-* package)
+
+tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
+if [ -n "$1" ]; then
+    cp "$1" "$tmp/shot.png"
+else
+    grimblast --freeze save area "$tmp/shot.png" >/dev/null 2>&1 || exit 0  # selection cancelled
+fi
+[ -s "$tmp/shot.png" ] || exit 0
+
+# Screen text is small; upscaling 2x makes tesseract far more accurate
+img="$tmp/shot.png"
+if command -v magick >/dev/null; then
+    magick "$img" -resize 200% "$tmp/big.png" && img="$tmp/big.png"
+elif command -v gm >/dev/null; then
+    gm convert "$img" -resize 200% "$tmp/big.png" && img="$tmp/big.png"
+fi
+
+text=$(tesseract "$img" - -l "${OCR_LANG:-eng}" 2>/dev/null | tr -d '\f' | sed -e 's/[[:space:]]*$//' | sed -e :a -e '/^\n*$/{$d;N;ba' -e '}')
+if [ -z "$(printf %s "$text" | tr -d '[:space:]')" ]; then
+    notify-send -a OCR -i scanner "No text found" "Try selecting a larger area"
+    exit 1
+fi
+printf '%s' "$text" | wl-copy
+notify-send -a OCR -i scanner "Text copied" "$(printf '%s' "$text" | head -c 200)"

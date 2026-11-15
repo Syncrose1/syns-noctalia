@@ -67,3 +67,9 @@ hl.bind("SUPER + SUPER_R", hl.dsp.exec_cmd("noctalia msg panel-toggle launcher")
 
 -- Ctrl+Alt+Delete opens the session menu (lock, log out, suspend, reboot, shut down)
 hl.bind("CTRL + ALT + Delete", hl.dsp.exec_cmd("noctalia msg panel-toggle session"), { description = "Session menu" })
+
+-- Ctrl+Super+T opens Noctalia's wallpaper picker
+hl.bind("CTRL + SUPER + T", hl.dsp.exec_cmd("noctalia msg panel-toggle wallpaper"), { description = "Wallpaper picker" })
+
+-- Super+Shift+T: drag a region (or click a window) and copy its text, OCR'd offline with tesseract
+hl.bind("SUPER + SHIFT + T", hl.dsp.exec_cmd("~/.local/bin/ocr-region"), { description = "OCR: copy text from a region" })
