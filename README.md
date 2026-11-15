@@ -48,8 +48,7 @@ curl -fsSL https://raw.githubusercontent.com/Syncrose1/syns-noctalia/main/instal
 - Dolphin tiles; Qt/KDE apps follow Noctalia's colours (`QT_QPA_PLATFORMTHEME=kde`)
 - UK keyboard, normal pointer acceleration
 - AI Usage in the bar (Claude Code, SuperGrok, …) via the `ai-usagebar` plugin; display profiles via the `nwg-displays` plugin (`/nwg` in the launcher)
-- Video and GIF wallpapers via the `mpvpaper` plugin (film icon on the bar): drop files into `~/Pictures/Wallpapers`, shared with still wallpapers. Pauses when covered; slideshows supported. The installer can link your Wallpaper Engine video wallpapers in
-- Live wallpapers from your Steam Wallpaper Engine library via the `w-engine` plugin (`linux-wallpaperengine`)
+- Video and GIF wallpapers via the `mpvpaper` plugin (film icon on the bar): drop files into `~/Pictures/Wallpapers`, shared with still wallpapers. Pauses when covered; slideshows supported. The installer can copy in the video wallpapers from a Wallpaper Engine library
 - Kitty at 85% opacity: **Ctrl+Alt+↑/↓** to adjust, **Ctrl+Alt+0** to reset; closes without confirming
 
 ## Lock screen
@@ -111,10 +110,9 @@ Hyprland for that). Tweak modes, positions and scale there, then copy it into th
 CachyOS (or the CachyOS repos) for `cachyos-hypr-noctalia`. The installer adds `grimblast-git`,
 `inter-font`, `jq`, `bc`, `tesseract`, `tesseract-data-eng`, `imagemagick`, `nwg-displays`, `hypridle`,
 `git`, `quickshell` and the Qt/GStreamer video packages qylock needs, using `pacman -S --needed`
-(no full system upgrade). Optionally from the AUR with paru or yay: `ai-usagebar-bin` and
-`linux-wallpaperengine-git`.
+(no full system upgrade). Optionally from the AUR with paru or yay: `ai-usagebar-bin`.
 
 ## Credits
 
 - [qylock](https://github.com/Darkkal44/qylock) by Darkkal44, GPL-3.0. `files/qylock/` patches it; see its gallery for theme previews and wallpaper credits.
-- [Noctalia](https://noctalia.dev), [CachyOS](https://cachyos.org)'s `cachyos-hypr-noctalia`, and the plugin authors (felipeartur/ai-usagebar, micahg/nwg-displays, tadomika_ari/w-engine).
+- [Noctalia](https://noctalia.dev), [CachyOS](https://cachyos.org)'s `cachyos-hypr-noctalia`, and the plugin authors (felipeartur/ai-usagebar, micahg/nwg-displays, mpvpaper).

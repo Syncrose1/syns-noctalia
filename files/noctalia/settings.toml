@@ -193,7 +193,7 @@ mpv_options = "panscan=1.0"
 video_directory = "@HOME@/Pictures/Wallpapers"
 
 [plugins]
-enabled = [ "micahg/nwg-displays", "felipeartur/ai-usagebar", "tadomika_ari/w-engine", "noctalia/mpvpaper" ]
+enabled = [ "micahg/nwg-displays", "felipeartur/ai-usagebar", "noctalia/mpvpaper" ]
 
 [shell]
 font_family = "Inter"
@@ -245,9 +245,6 @@ type = "noctalia/mpvpaper:mpvpaper"
 
 [widget.volume]
 peek = true
-
-[widget.wallpapers]
-type = "tadomika_ari/w-engine:w-engine-widget"
 
 [widget.workspaces]
 active_pill_size = 2.2000000000000002

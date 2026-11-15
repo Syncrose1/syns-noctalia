@@ -308,7 +308,6 @@ aur_install() { # aur_install <package> <question>
 if ! $NOPKG; then
     AUR=$(command -v paru || command -v yay || true)
     aur_install ai-usagebar-bin "Install ai-usagebar-bin from the AUR for the AI Usage bar plugin (Claude, Grok, Codex... quotas)?"
-    aur_install linux-wallpaperengine-git "Install linux-wallpaperengine-git from the AUR for live Wallpaper Engine wallpapers (w-engine plugin; needs Wallpaper Engine on Steam; builds from source, takes a few minutes)?"
 fi
 if ! $INSTALLED && command -v ai-usagebar >/dev/null 2>&1 && ask "Turn on AI Usage for the AI tools already logged in on this machine?" Y; then
     run ai-usagebar detect >/dev/null && ok "AI Usage: enabled every provider with credentials here (change in the plugin's panel)"
@@ -459,7 +458,7 @@ step "Video wallpapers (mpvpaper plugin)"
 run mkdir -p "$HOME/Pictures/Wallpapers"
 ok "Videos and GIFs in ~/Pictures/Wallpapers (shared with still wallpapers) appear under the bar's film icon"
 WE_WORKSHOP="$HOME/.local/share/Steam/steamapps/workshop/content/431960"
-if [ -d "$WE_WORKSHOP" ] && command -v jq >/dev/null && ask "Link your Wallpaper Engine video wallpapers into ~/Pictures/Wallpapers (no copies)?" Y; then
+if [ -d "$WE_WORKSHOP" ] && command -v jq >/dev/null && ask "Copy your Wallpaper Engine video wallpapers into ~/Pictures/Wallpapers (instant and space-free on Btrfs)?" Y; then
     linked=0
     for proj in "$WE_WORKSHOP"/*/project.json; do
         [ "$(jq -r '.type // "" | ascii_downcase' "$proj" 2>/dev/null)" = video ] || continue
@@ -467,9 +466,11 @@ if [ -d "$WE_WORKSHOP" ] && command -v jq >/dev/null && ask "Link your Wallpaper
         [ -f "$file" ] || continue
         name=$(jq -r '.title // "wallpaper"' "$proj" | tr -d '[]【】|/\\:*?"<>' | tr -s ' ' | cut -c1-60 | sed 's/ *$//')
         link="$HOME/Pictures/Wallpapers/${name:-wallpaper}.${file##*.}"
-        [ -e "$link" ] || { run ln -s "$file" "$link"; linked=$((linked + 1)); }
+        # reflink copy where the filesystem supports it (no extra space), so the video
+        # survives uninstalling Wallpaper Engine
+        [ -e "$link" ] || { run cp --reflink=auto "$file" "$link"; linked=$((linked + 1)); }
     done
-    ok "Linked $linked video wallpaper(s)"
+    ok "Added $linked video wallpaper(s)"
 fi
 
 # ---------- lock screen (qylock) ----------
