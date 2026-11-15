@@ -29,6 +29,7 @@ curl -fsSL https://raw.githubusercontent.com/Syncrose1/syns-noctalia/main/instal
 - **Super+Shift+S**: screenshot. Drag to crop, or click a window (grimblast); saved to `~/Pictures/Screenshots` and copied
 - **Super+Shift+T**: OCR. Drag a region (or click a window) and its text is copied to the clipboard; offline via tesseract, no API key
 - **Ctrl+Super+T**: wallpaper picker
+- **Super+L**: lock (qylock, see below)
 - **Ctrl+Alt+Delete**: session menu (lock, log out, suspend, reboot, shut down)
 - **Super+Alt+S**: send window to the scratchpad (Super+S shows it)
 - Super+scroll switches workspaces
@@ -42,14 +43,43 @@ curl -fsSL https://raw.githubusercontent.com/Syncrose1/syns-noctalia/main/instal
 - Dolphin tiles; Qt/KDE apps follow Noctalia's colours (`QT_QPA_PLATFORMTHEME=kde`)
 - UK keyboard, normal pointer acceleration
 - AI Usage in the bar (Claude Code, SuperGrok, …) via the `ai-usagebar` plugin; display profiles via the `nwg-displays` plugin (`/nwg` in the launcher)
+- Live wallpapers from your Steam Wallpaper Engine library via the `w-engine` plugin (`linux-wallpaperengine`)
 - Kitty at 85% opacity: **Ctrl+Alt+↑/↓** to adjust, **Ctrl+Alt+0** to reset; closes without confirming
+
+## Lock screen
+
+Animated lock screens from [**qylock**](https://github.com/Darkkal44/qylock) by Darkkal44 (GPL-3.0),
+downloaded from upstream at a pinned commit during install. Only the themes you choose are fetched;
+the defaults are Clockwork (orbital dial with windup), Pixel Sakura, Enfield and Pixel Rainy Room.
+
+```sh
+lock-theme                     # list installed themes (current one marked)
+lock-theme pixel-sakura        # switch; partial names like "clockwork" work
+lock-theme --preview enfield   # preview in a window without locking
+```
+
+Additions on top of upstream (`files/qylock/`):
+- **Fade-to-desktop unlock**: each monitor is snapshotted (privately, in memory) just before
+  locking, and after a correct password the lock fades into it, so the real unlock is seamless.
+  Snapshots are deleted straight after and never shown before authentication.
+- **Emergency fallback**: if a theme fails to load, a plain password screen appears instead of a
+  black one, so you can always unlock.
+- `lock-screen` validates the theme, force-closes a lock that hangs after unlocking, and never
+  waits on a screenshot (1s limit).
+
+Super+L, the session menu, Noctalia's idle actions and sleep all go through
+`loginctl lock-session`, which hypridle turns into `lock-screen`. Noctalia's own lock is disabled
+(declining qylock in the installer keeps it instead). If anything ever goes wrong while locked:
+Ctrl+Alt+F3, log in, run `hyprctl --instance 0 dispatch 'hl.dsp.exec_cmd("~/.local/bin/lock-screen")'`,
+then Ctrl+Alt+F1.
 
 ## How it's layered
 
 | Owner | Files |
 |---|---|
 | CachyOS (stock, refreshed from `/etc/skel`) | `~/.config/hypr/config/*.lua`, `kitty/cachyos.conf`, `uwsm/env.cachyos`, `noctalia/config.toml` |
-| This repo | `~/.config/hypr/hyprland.lua`, `~/.config/hypr/user/`, `kitty/kitty.conf`, `uwsm/env`, Noctalia's `settings.toml`, `~/.local/bin/{bar-scroll,ocr-region,sync-cachyos-config}` |
+| This repo | `~/.config/hypr/hyprland.lua`, `~/.config/hypr/user/`, `kitty/kitty.conf`, `uwsm/env`, Noctalia's `settings.toml`, `~/.config/hypr/hypridle.conf`, `~/.local/bin/{bar-scroll,ocr-region,lock-screen,lock-theme,sync-cachyos-config}` |
+| qylock (upstream + patch) | `~/.local/share/quickshell-lockscreen`, `~/.local/share/qylock/themes`, `~/.config/qylock/theme` |
 | Noctalia (generated) | `~/.config/hypr/noctalia.lua`, `kitty/themes/noctalia.conf` |
 | Monitor utility (per machine) | `~/.config/hypr/monitors.lua`, `~/.config/hypr/workspaces.lua` |
 
@@ -73,4 +103,12 @@ Hyprland for that). Tweak modes, positions and scale there, then copy it into th
 ## Requirements
 
 CachyOS (or the CachyOS repos) for `cachyos-hypr-noctalia`. The installer adds `grimblast-git`,
-`inter-font`, `jq`, `bc`, `tesseract`, `tesseract-data-eng`, `imagemagick` and `nwg-displays`, using `pacman -S --needed` (no full system upgrade), and optionally `ai-usagebar-bin` from the AUR with paru or yay.
+`inter-font`, `jq`, `bc`, `tesseract`, `tesseract-data-eng`, `imagemagick`, `nwg-displays`, `hypridle`,
+`git`, `quickshell` and the Qt/GStreamer video packages qylock needs, using `pacman -S --needed`
+(no full system upgrade). Optionally from the AUR with paru or yay: `ai-usagebar-bin` and
+`linux-wallpaperengine-git`.
+
+## Credits
+
+- [qylock](https://github.com/Darkkal44/qylock) by Darkkal44, GPL-3.0. `files/qylock/` patches it; see its gallery for theme previews and wallpaper credits.
+- [Noctalia](https://noctalia.dev), [CachyOS](https://cachyos.org)'s `cachyos-hypr-noctalia`, and the plugin authors (felipeartur/ai-usagebar, micahg/nwg-displays, tadomika_ari/w-engine).

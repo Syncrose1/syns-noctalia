@@ -1,0 +1,86 @@
+--- a/lock_shell.qml
++++ b/lock_shell.qml
+@@ -20,6 +20,12 @@
+     property bool sessionLocked: true
+     property bool isTesting: Quickshell.env("QS_TESTING") === "1"
+ 
++    // Syn's Noctalia: gentle unlock. lock-screen snapshots each monitor into QS_SNAPSHOT_DIR
++    // before locking; after a successful login the lock fades into that image of the desktop,
++    // so the real unlock underneath is seamless.
++    property string snapshotDir: Quickshell.env("QS_SNAPSHOT_DIR") || ""
++    property real revealProgress: 0
++
+     SddmShim {
+         id: sddmShim
+         themePath: shellRoot.themePath
+@@ -30,19 +36,32 @@
+         function onLoginSucceeded() {
+             shellRoot.authenticated = true
+ 
+-            // Hyprland session lock fix
+-            if (Quickshell.env("XDG_CURRENT_DESKTOP") === "Hyprland" || Quickshell.env("HYPRLAND_INSTANCE_SIGNATURE") !== "") {
+-                Quickshell.execDetached(["hyprctl", "keyword", "misc:allow_session_lock_restore", "1"]);
+-            }
+-            Quickshell.execDetached(["loginctl", "unlock-session"]);
+-
+-            // Dynamic exit delay
++            // Let the theme's own success animation play, then fade into the desktop
+             let delay = 100;
+             if (activeTheme.includes("clockwork") && sddmShim.config.enableWindup === "true") {
+                 delay = 500;
+             }
+-            quitTimer.interval = delay;
+-            quitTimer.start()
++            revealPause.duration = delay;
++            unlockSequence.start()
++        }
++    }
++
++    SequentialAnimation {
++        id: unlockSequence
++        PauseAnimation { id: revealPause; duration: 100 }
++        NumberAnimation {
++            target: shellRoot; property: "revealProgress"; to: 1
++            duration: shellRoot.snapshotDir !== "" ? 700 : 0
++            easing.type: Easing.InOutCubic
++        }
++        ScriptAction {
++            script: {
++                if (shellRoot.snapshotDir !== "")
++                    Quickshell.execDetached(["touch", shellRoot.snapshotDir + "/unlocked"]);
++                Quickshell.execDetached(["loginctl", "unlock-session"]);
++                shellRoot.sessionLocked = false
++                Qt.quit()
++            }
+         }
+     }
+ 
+@@ -67,6 +86,9 @@
+             onStatusChanged: {
+                 if (status === Loader.Error) {
+                     console.error("FAILED to load theme:", source)
++                    // Syn's Noctalia: never leave a blank, unusable lock screen
++                    var fallback = "file://" + Quickshell.shellDir + "/fallback/Main.qml"
++                    if (source.toString() !== fallback) source = fallback
+                 }
+             }
+         }
+@@ -98,6 +120,18 @@
+                             anchors.fill: parent
+                             sourceComponent: themeComponent
+                         }
++
++                        // Fades in over the theme after login (Syn's Noctalia)
++                        Image {
++                            anchors.fill: parent
++                            visible: shellRoot.snapshotDir !== "" && opacity > 0
++                            opacity: shellRoot.revealProgress
++                            source: shellRoot.snapshotDir !== "" ? "file://" + shellRoot.snapshotDir + "/" + screen.name + ".png" : ""
++                            cache: false
++                            asynchronous: true
++                            fillMode: Image.Stretch
++                            smooth: true
++                        }
+                     }
+                 }
+             }

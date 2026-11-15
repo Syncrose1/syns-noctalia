@@ -1,0 +1,9 @@
+These files modify and extend qylock by Darkkal44 (https://github.com/Darkkal44/qylock),
+which is licensed under the GNU General Public License v3.0.
+
+- lock_shell.qml.patch: changes to qylock's quickshell-lockscreen/lock_shell.qml
+  (fade-to-desktop unlock, emergency fallback screen), against UPSTREAM_COMMIT
+- fallback/Main.qml: emergency password screen loaded by the patched lock_shell.qml
+
+Both are distributed under the GNU General Public License v3.0, the same as qylock.
+The installer downloads qylock itself (and its LICENSE) from upstream.

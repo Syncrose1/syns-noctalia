@@ -1,0 +1,73 @@
+#!/bin/sh
+# Lock the session with qylock (one instance at a time).
+# Theme: ~/.config/qylock/theme, or pass one: lock-screen pixel-sakura
+# Everything locks through here via `loginctl lock-session` -> hypridle -> this script.
+
+QS_DIR="$HOME/.local/share/quickshell-lockscreen"
+QS_SHELL="$QS_DIR/lock_shell.qml"
+
+# qylock not installed? Fall back to Noctalia's own lock screen.
+[ -x "$QS_DIR/lock.sh" ] || exec noctalia msg session lock
+SNAP="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/qylock"
+
+# Already locked? A qylock that has finished unlocking (left an "unlocked" marker) but is
+# still alive is hung on exit, so clear it out instead of treating it as a live lock.
+if pgrep -f "quickshell -p $QS_SHELL" >/dev/null; then
+    if [ -f "$SNAP/unlocked" ]; then
+        pkill -9 -f "quickshell -p $QS_SHELL"
+        sleep 0.3
+    else
+        exit 0
+    fi
+fi
+
+# Snapshot each monitor (private, in-memory) so unlocking can fade into the desktop
+rm -rf "$SNAP"
+mkdir -p -m 700 "$SNAP"
+# Never let this delay the lock: each capture gets 1s (grim can wait forever when the
+# session isn't drawing, e.g. screen off or another VT). Any failure just skips the fade.
+snap_ok=false
+if command -v grim >/dev/null && command -v hyprctl >/dev/null; then
+    snap_ok=true
+    for out in $(timeout 1 hyprctl monitors -j 2>/dev/null | jq -r '.[].name'); do
+        timeout 1 grim -t png -l 0 -o "$out" "$SNAP/$out.png" || snap_ok=false
+    done
+fi
+if $snap_ok && ls "$SNAP"/*.png >/dev/null 2>&1; then
+    export QS_SNAPSHOT_DIR="$SNAP"
+else
+    rm -f "$SNAP"/*.png
+    unset QS_SNAPSHOT_DIR
+fi
+
+# Resolve the theme and make sure it exists, so a typo can't produce a blank lock screen.
+# A family folder (e.g. "clockwork") resolves to its preferred/first variant.
+THEMES="$HOME/.local/share/qylock/themes"
+DEFAULT_THEME="clockwork/orbital"
+theme="${1:-$(cat "$HOME/.config/qylock/theme" 2>/dev/null)}"
+theme=$(printf '%s' "$theme" | tr -d '[:space:]' | sed 's|/*$||')
+if [ -n "$theme" ] && [ ! -f "$THEMES/$theme/Main.qml" ] && [ -d "$THEMES/$theme" ]; then
+    for v in orbital $(ls "$THEMES/$theme" 2>/dev/null); do
+        [ -f "$THEMES/$theme/$v/Main.qml" ] && { theme="$theme/$v"; break; }
+    done
+fi
+if [ -z "$theme" ] || [ ! -f "$THEMES/$theme/Main.qml" ]; then
+    notify-send -a "Lock screen" "Unknown lock theme '${theme:-empty}'" "Using $DEFAULT_THEME. Change it with: lock-theme" 2>/dev/null
+    theme="$DEFAULT_THEME"
+fi
+
+"$QS_DIR/lock.sh" "$theme" &
+pid=$!
+
+# Watchdog: after a successful unlock, give qylock 3s to exit, then force it
+# (video themes can hang Qt on shutdown, which would block the next lock)
+while kill -0 "$pid" 2>/dev/null; do
+    if [ -f "$SNAP/unlocked" ]; then
+        sleep 3
+        kill -9 "$pid" 2>/dev/null
+        break
+    fi
+    sleep 1
+done
+wait "$pid" 2>/dev/null
+rm -rf "$SNAP"

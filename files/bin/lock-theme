@@ -1,0 +1,27 @@
+#!/bin/sh
+# Pick the qylock lock screen theme.
+#   lock-theme            list themes (current one marked)
+#   lock-theme <name>     set it (a family like "clockwork" picks its first variant)
+#   lock-theme --preview <name>   preview in a window without locking
+THEMES="$HOME/.local/share/qylock/themes"
+CONF="$HOME/.config/qylock/theme"
+current=$(cat "$CONF" 2>/dev/null)
+list() { find "$THEMES" -name Main.qml -printf '%h\n' | sed "s|^$THEMES/||" | sort; }
+
+if [ "$1" = "--preview" ]; then
+    t=${2:-$current}
+    [ -f "$THEMES/$t/Main.qml" ] || { echo "Unknown theme: $t"; list; exit 1; }
+    XDG_SESSION_TYPE=x11 QS_TESTING=1 exec "$HOME/.local/share/quickshell-lockscreen/lock.sh" "$t"
+fi
+if [ -z "$1" ]; then
+    list | while read -r t; do [ "$t" = "$current" ] && echo "* $t" || echo "  $t"; done
+    exit 0
+fi
+t=$(printf '%s' "$1" | sed 's|/*$||')
+if [ ! -f "$THEMES/$t/Main.qml" ]; then
+    if [ -f "$THEMES/$t/orbital/Main.qml" ]; then match="$t/orbital"; else match=$(list | grep -m1 "^$t/") || match=""; fi
+    [ -n "$match" ] || { echo "Unknown theme: $t"; echo "Available:"; list | sed 's/^/  /'; exit 1; }
+    t=$match
+fi
+mkdir -p "$(dirname "$CONF")"; echo "$t" > "$CONF"
+echo "Lock screen theme: $t"

@@ -18,7 +18,12 @@ REPO="Syncrose1/syns-noctalia"
 BRANCH="${SYNS_NOCTALIA_BRANCH:-main}"
 STATE="$HOME/.local/state/syns-noctalia"
 SKEL=/etc/skel
-PACKAGES=(cachyos-hypr-noctalia grimblast-git inter-font jq bc tesseract tesseract-data-eng imagemagick nwg-displays)
+PACKAGES=(cachyos-hypr-noctalia grimblast-git inter-font jq bc tesseract tesseract-data-eng imagemagick nwg-displays
+          hypridle git quickshell qt6-5compat qt6-multimedia qt6-multimedia-ffmpeg
+          gst-plugins-good gst-plugins-bad gst-plugins-ugly gst-libav)
+QYLOCK_REPO="https://github.com/Darkkal44/qylock.git"
+QYLOCK_COMMIT="c2933f27b655a999911e6699e1b2c67e59cbd428"   # tested with the patch in files/qylock
+QYLOCK_DEFAULT_THEMES="clockwork pixel-sakura enfield pixel-rainyroom"
 
 YES=false DRY=false NOPKG=false UNINSTALL=false
 usage() {
@@ -151,14 +156,18 @@ else
     fi
 fi
 
-# AUR: the CLI behind the AI Usage bar plugin (felipeartur/ai-usagebar)
-if ! $NOPKG && ! pacman -Qq ai-usagebar-bin >/dev/null 2>&1; then
-    AUR=$(command -v paru || command -v yay || true)
-    if [ -z "$AUR" ]; then
-        warn "No AUR helper (paru/yay), so the AI Usage bar plugin's CLI (ai-usagebar-bin) was skipped."
-    elif ask "Install ai-usagebar-bin from the AUR for the AI Usage bar plugin (Claude, Grok, Codex... quotas)?" Y; then
-        run "$AUR" -S --needed ai-usagebar-bin && ok "ai-usagebar installed" || warn "ai-usagebar-bin failed to install"
+# AUR extras (need paru or yay)
+aur_install() { # aur_install <package> <question>
+    pacman -Qq "$1" >/dev/null 2>&1 && { ok "$1 already installed"; return; }
+    if [ -z "${AUR:-}" ]; then warn "No AUR helper (paru/yay), so $1 was skipped."; return; fi
+    if ask "$2" Y; then
+        run "$AUR" -S --needed "$1" && ok "$1 installed" || warn "$1 failed to install"
     fi
+}
+if ! $NOPKG; then
+    AUR=$(command -v paru || command -v yay || true)
+    aur_install ai-usagebar-bin "Install ai-usagebar-bin from the AUR for the AI Usage bar plugin (Claude, Grok, Codex... quotas)?"
+    aur_install linux-wallpaperengine-git "Install linux-wallpaperengine-git from the AUR for live Wallpaper Engine wallpapers (w-engine plugin; needs Wallpaper Engine on Steam; builds from source, takes a few minutes)?"
 fi
 if command -v ai-usagebar >/dev/null 2>&1 && ask "Turn on AI Usage for the AI tools already logged in on this machine?" Y; then
     run ai-usagebar detect >/dev/null && ok "AI Usage: enabled every provider with credentials here (change in the plugin's panel)"
@@ -179,6 +188,11 @@ MANAGED=(
     .local/bin/sync-cachyos-config
     .local/bin/ocr-region
     .local/share/applications/nwg-displays.desktop
+    .local/bin/lock-screen
+    .local/bin/lock-theme
+    .local/share/quickshell-lockscreen
+    .local/share/qylock
+    .config/qylock
 )
 step "Backing up your current configs"
 run mkdir -p "$BACKUP/files"
@@ -234,10 +248,12 @@ if [ ! -f "$HOME/.config/hypr/noctalia.lua" ]; then
 fi
 run cp "$SRC/kitty/kitty.conf" "$HOME/.config/kitty/kitty.conf"
 run cp "$SRC/uwsm/env" "$HOME/.config/uwsm/env"
-run install -m755 "$SRC/bin/bar-scroll" "$SRC/bin/sync-cachyos-config" "$SRC/bin/ocr-region" "$HOME/.local/bin/"
+run install -m755 "$SRC/bin/bar-scroll" "$SRC/bin/sync-cachyos-config" "$SRC/bin/ocr-region" \
+    "$SRC/bin/lock-screen" "$SRC/bin/lock-theme" "$HOME/.local/bin/"
+run cp "$SRC/hypr/hypridle.conf" "$HOME/.config/hypr/hypridle.conf"
 run mkdir -p "$HOME/.local/share/applications"
 run cp "$SRC/applications/nwg-displays.desktop" "$HOME/.local/share/applications/"  # searchable as "Monitor Settings"
-ok "Keybinds, workspaces, theming, kitty, bar scrolling, OCR and sync script"
+ok "Keybinds, workspaces, theming, kitty, bar scrolling, OCR, lock wiring and sync script"
 
 # ---------- this machine ----------
 HOST=${SYNS_NOCTALIA_HOST:-$(cat /etc/hostname 2>/dev/null || hostname)}
@@ -297,6 +313,80 @@ else
     ok "Installed"
 fi
 
+# ---------- lock screen (qylock) ----------
+step "Lock screen (qylock themes by Darkkal44)"
+QS_DIR="$HOME/.local/share/quickshell-lockscreen"
+QY_THEMES="$HOME/.local/share/qylock/themes"
+if ask "Install the animated qylock lock screen (replaces Noctalia's lock)?" Y; then
+    if ! command -v git >/dev/null || ! command -v quickshell >/dev/null; then
+        $DRY || die "qylock needs git and quickshell (from the package step)."
+    fi
+    QY_SRC="$STATE/qylock-src"
+    if $DRY; then
+        info "[dry-run] fetch qylock $QYLOCK_COMMIT (themes only on demand)"
+        themes="$QYLOCK_DEFAULT_THEMES"
+    else
+        # Sparse, blob-less clone: only the lock engine and the chosen themes are downloaded
+        if [ ! -d "$QY_SRC/.git" ]; then
+            rm -rf "$QY_SRC"
+            git clone -q --filter=blob:none --sparse --no-checkout "$QYLOCK_REPO" "$QY_SRC" || die "Could not download qylock."
+        fi
+        git -C "$QY_SRC" fetch -q --filter=blob:none origin "$QYLOCK_COMMIT" 2>/dev/null || true
+        available=$(git -C "$QY_SRC" ls-tree -d --name-only "$QYLOCK_COMMIT:themes" | tr '\n' ' ')
+        themes="$QYLOCK_DEFAULT_THEMES"
+        if ! $YES && [ -r "$TTY" ]; then
+            info "Available themes: $available"
+            info "Previews: https://github.com/Darkkal44/qylock#gallery"
+            printf '    %s?%s Themes to install [%s]: ' "$Y" "$N" "$QYLOCK_DEFAULT_THEMES" >"$TTY"
+            read -r pick <"$TTY" || pick=""
+            [ -n "$pick" ] && themes="$pick"
+        fi
+        sel="quickshell-lockscreen"
+        for t in $themes; do
+            if printf ' %s ' "$available" | grep -q " $t "; then sel="$sel themes/$t"
+            else warn "Unknown theme '$t', skipped"; fi
+        done
+        info "Downloading: ${sel#quickshell-lockscreen}"
+        git -C "$QY_SRC" sparse-checkout set $sel >/dev/null
+        git -C "$QY_SRC" checkout -q "$QYLOCK_COMMIT" || die "Could not check out qylock."
+    fi
+
+    # Lock engine + Syn's patch (fade-to-desktop unlock, emergency fallback screen)
+    run rm -rf "$QS_DIR"
+    run cp -r "$QY_SRC/quickshell-lockscreen" "$QS_DIR"
+    if $DRY; then info "[dry-run] patch lock_shell.qml"
+    else (cd "$QS_DIR" && patch -s -p1 <"$SRC/qylock/lock_shell.qml.patch") || die "qylock patch failed to apply."; fi
+    run mkdir -p "$QS_DIR/fallback" "$QY_THEMES"
+    run cp "$SRC/qylock/fallback/Main.qml" "$QS_DIR/fallback/Main.qml"
+    run chmod +x "$QS_DIR/lock.sh"
+    for t in $themes; do
+        [ -d "$QY_SRC/themes/$t" ] || continue
+        run rm -rf "${QY_THEMES:?}/$t"; run cp -r "$QY_SRC/themes/$t" "$QY_THEMES/$t"
+    done
+    run ln -sfn "$QY_THEMES" "$QS_DIR/themes_link"
+    $DRY || git -C "$QY_SRC" show "$QYLOCK_COMMIT:LICENSE" >"$HOME/.local/share/qylock/LICENSE" 2>/dev/null || true
+    # Clockwork: dark orbital dial with the windup animation
+    for c in "$QY_THEMES"/clockwork/*/theme.conf; do
+        [ -f "$c" ] && run sed -i 's/^themeMode=.*/themeMode=dark/; s/^enableWindup=.*/enableWindup=true/' "$c"
+    done
+    # Keep the current theme if it's valid, otherwise pick a sensible default
+    cur=$(cat "$HOME/.config/qylock/theme" 2>/dev/null || true)
+    if [ -z "$cur" ] || [ ! -f "$QY_THEMES/$cur/Main.qml" ]; then
+        if [ -f "$QY_THEMES/clockwork/orbital/Main.qml" ]; then cur="clockwork/orbital"
+        else cur=$(find "$QY_THEMES" -name Main.qml -printf '%h\n' 2>/dev/null | sed "s|^$QY_THEMES/||" | sort | head -1); fi
+        run mkdir -p "$HOME/.config/qylock"
+        $DRY || echo "$cur" >"$HOME/.config/qylock/theme"
+    fi
+    ok "qylock installed (theme: ${cur:-clockwork/orbital}). Switch with: lock-theme"
+    ok "Super+L, the session menu and sleep all lock through hypridle -> lock-screen"
+else
+    # Keep Noctalia's own lock screen in charge
+    if [ -f "$NSET" ]; then
+        run sed -i '/^\[lockscreen\]/,/^\[/ { s/^enabled = false/enabled = true/; s/^lock_before_suspend = false/lock_before_suspend = true/ }' "$NSET"
+    fi
+    warn "Kept Noctalia's lock screen (lock-screen falls back to it)"
+fi
+
 # ---------- optional system tweaks ----------
 step "Optional system tweaks (need sudo)"
 if [ ! -f /etc/pacman.d/hooks/cachyos-hypr-noctalia-sync.hook ]; then
@@ -329,6 +419,9 @@ if command -v hyprctl >/dev/null && [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; t
     [ -n "${errs:-}" ] && warn "Hyprland reported: $errs"
     command -v noctalia >/dev/null && { run noctalia msg config-reload >/dev/null 2>&1 && ok "Noctalia reloaded" || true; }
     pkill -USR1 -x kitty 2>/dev/null || true
+    if command -v hypridle >/dev/null && ! pgrep -x hypridle >/dev/null; then
+        run hyprctl dispatch 'hl.dsp.exec_cmd("hypridle")' >/dev/null && ok "hypridle started"
+    fi
 else
     info "Log in to the Hyprland session to see everything."
 fi

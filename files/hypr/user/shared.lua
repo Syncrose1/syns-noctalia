@@ -76,3 +76,11 @@ hl.bind("SUPER + SHIFT + T", hl.dsp.exec_cmd("~/.local/bin/ocr-region"), { descr
 
 -- Monitor utility (nwg-displays) opens as a floating settings window
 hl.window_rule({ match = { class = "^(nwg-displays)$" }, float = true, center = true, size = { "monitor_w*0.6", "monitor_h*0.7" } })
+
+-- Lock screen: qylock (Quickshell) via hypridle. Super+L and the session menu send
+-- `loginctl lock-session`; hypridle runs ~/.local/bin/lock-screen and also locks before sleep.
+-- allow_session_lock_restore lets a crashed lock screen be restarted while staying locked.
+hl.config({ misc = { allow_session_lock_restore = true } })
+hl.on("hyprland.start", function () hl.exec_cmd("hypridle") end)
+hl.unbind("SUPER + L")
+hl.bind("SUPER + L", hl.dsp.exec_cmd("loginctl lock-session"), { description = "Lock screen" })

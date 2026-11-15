@@ -76,10 +76,20 @@ reserve_space = false
 show_dots = true
 smart_auto_hide = true
 
+[idle.behavior.lock]
+command = "loginctl lock-session"
+enabled = false
+
+[idle.behavior.lock-and-suspend]
+command = "systemctl suspend"
+enabled = false
+
 [location]
 auto_locate = true
 
 [lockscreen]
+enabled = false
+lock_before_suspend = false
 transition = [ "crt", "melt", "pixel" ]
 
 [lockscreen_widgets]
@@ -178,7 +188,7 @@ widget_order = [
     type = "weather"
 
 [plugins]
-enabled = [ "micahg/nwg-displays", "felipeartur/ai-usagebar" ]
+enabled = [ "micahg/nwg-displays", "felipeartur/ai-usagebar", "tadomika_ari/w-engine" ]
 
 [shell]
 font_family = "Inter"
@@ -189,6 +199,15 @@ telemetry_enabled = true
     directory = "@HOME@/Pictures/Screenshots"
     pipe_to_command = false
     save_to_file = true
+
+    [shell.session]
+    actions = [
+        { action = "lock", command = "loginctl lock-session", countdown_seconds = 0.0, enabled = true, shortcut = "1", variant = "default" },
+        { action = "logout", countdown_seconds = 0.0, enabled = true, shortcut = "2", variant = "default" },
+        { action = "lock_and_suspend", command = "systemctl suspend", countdown_seconds = 3.0, enabled = true, shortcut = "3", variant = "default" },
+        { action = "reboot", countdown_seconds = 3.0, enabled = true, shortcut = "4", variant = "default" },
+        { action = "shutdown", countdown_seconds = 3.0, enabled = true, shortcut = "5", variant = "destructive" }
+    ]
 
 [theme]
 builtin = "Rosé Pine"
