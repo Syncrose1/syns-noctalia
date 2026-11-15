@@ -5,6 +5,7 @@ background_opacity = 0.59999999999999998
 border_width = 0.0
 capsule_opacity = 1.0
 concave_edge_corners = true
+end = [ "media", "spacer_1", "tray", "wallpapers", "notifications", "network", "volume", "session" ]
 margin_edge = 0
 margin_ends = 0
 radius_bottom_left = 12
@@ -237,6 +238,9 @@ peek = true
 
 [widget.volume]
 peek = true
+
+[widget.wallpapers]
+type = "tadomika_ari/w-engine:w-engine-widget"
 
 [widget.workspaces]
 active_pill_size = 2.2000000000000002
