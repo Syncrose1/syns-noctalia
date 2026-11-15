@@ -82,6 +82,147 @@ run() { # run a command, or print it in dry-run mode
 command -v pacman >/dev/null || die "This needs an Arch-based system with pacman (CachyOS recommended)."
 command -v curl >/dev/null || die "curl is required."
 
+# ---------- menu (when already installed) ----------
+# First install, --yes, --dry-run, --uninstall or no terminal: skip straight to the work.
+INSTALLED=false
+{ [ -f "$STATE/installed" ] || [ -f "$HOME/.config/hypr/user/shared.lua" ]; } && INSTALLED=true
+
+read_tty() { local r; read -r r <"$TTY" || r=""; printf '%s' "$r"; }
+
+qylock_src_ready() { # make sure the pinned qylock checkout exists (engine only, themes on demand)
+    local src="$STATE/qylock-src"
+    if [ ! -d "$src/.git" ]; then
+        info "Fetching the qylock theme catalogue..."
+        git clone -q --filter=blob:none --sparse --no-checkout "$QYLOCK_REPO" "$src" || return 1
+        git -C "$src" sparse-checkout set quickshell-lockscreen >/dev/null
+    fi
+    git -C "$src" cat-file -e "$QYLOCK_COMMIT^{commit}" 2>/dev/null \
+        || git -C "$src" fetch -q --filter=blob:none origin "$QYLOCK_COMMIT" || return 1
+    git -C "$src" checkout -q "$QYLOCK_COMMIT" 2>/dev/null
+}
+
+menu_lock() {
+    local themes_dir="$HOME/.local/share/qylock/themes" conf="$HOME/.config/qylock/theme" src="$STATE/qylock-src"
+    if [ ! -x "$HOME/.local/share/quickshell-lockscreen/lock.sh" ]; then
+        warn "The qylock lock screen isn't installed. Choose 'Update / reinstall' to add it."
+        return
+    fi
+    command -v git >/dev/null || { warn "git is needed to download themes."; }
+    while :; do
+        local current installed families i=0 choice
+        current=$(cat "$conf" 2>/dev/null || true)
+        installed=$(find "$themes_dir" -name Main.qml -printf '%h\n' 2>/dev/null | sed "s|^$themes_dir/||" | sort || true)
+        families=""
+        if qylock_src_ready 2>/dev/null; then
+            families=$(git -C "$src" ls-tree -d --name-only "$QYLOCK_COMMIT:themes" 2>/dev/null || true)
+        else
+            warn "Couldn't reach GitHub; showing installed themes only."
+        fi
+        step "Lock screen themes"
+        local -a opts=()
+        for t in $installed; do
+            i=$((i + 1)); opts[$i]="$t"
+            if [ "$t" = "$current" ]; then info "$(printf '%2d) %s  %s(current)%s' $i "$t" "$G" "$N")"; else info "$(printf '%2d) %s' $i "$t")"; fi
+        done
+        local first_dl=$((i + 1))
+        for f in $families; do
+            printf '%s\n' "$installed" | grep -q "^$f\(/\|$\)" && continue
+            i=$((i + 1)); opts[$i]="+$f"
+            info "$(printf '%2d) %s  %s(download)%s' $i "$f" "$D" "$N")"
+        done
+        info "Gallery with previews: https://github.com/Darkkal44/qylock#gallery"
+        printf '    %s?%s Pick a number to use it, p<number> to preview, or Enter to go back: ' "$Y" "$N" >"$TTY"
+        choice=$(read_tty)
+        [ -z "$choice" ] && return
+        local preview=false
+        case "$choice" in p*|P*) preview=true; choice=${choice#[pP]} ;; esac
+        [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le $i ] || { warn "Not an option"; continue; }
+        local pick=${opts[$choice]}
+        if [ "${pick:0:1}" = "+" ]; then
+            local fam=${pick:1}
+            info "Downloading $fam..."
+            git -C "$src" sparse-checkout add "themes/$fam" >/dev/null && git -C "$src" checkout -q "$QYLOCK_COMMIT" \
+                || { warn "Download failed"; continue; }
+            rm -rf "${themes_dir:?}/$fam"; cp -r "$src/themes/$fam" "$themes_dir/$fam"
+            for c in "$themes_dir/$fam"/*/theme.conf "$themes_dir/$fam/theme.conf"; do
+                [ -f "$c" ] && [ "$fam" = clockwork ] && sed -i 's/^themeMode=.*/themeMode=dark/; s/^enableWindup=.*/enableWindup=true/' "$c"
+            done
+            # resolve a family folder to a variant
+            if [ -f "$themes_dir/$fam/Main.qml" ]; then pick=$fam
+            elif [ -f "$themes_dir/$fam/orbital/Main.qml" ]; then pick="$fam/orbital"
+            else pick=$(find "$themes_dir/$fam" -name Main.qml -printf '%h\n' | sed "s|^$themes_dir/||" | sort | head -1); fi
+            ok "Downloaded $fam"
+            if [ -d "$themes_dir/$pick/font" ] && ! ls "$themes_dir/$pick/font" 2>/dev/null | grep -qiE '\.(ttf|otf)$'; then
+                warn "This theme expects a font qylock can't ship; see the qylock README (fonts) and put it in $themes_dir/$pick/font/"
+            fi
+        fi
+        if $preview; then
+            info "Opening a preview window (nothing gets locked). Close it to come back here."
+            "$HOME/.local/bin/lock-theme" --preview "$pick" >/dev/null 2>&1 || true
+            ask "Use $pick as your lock screen?" Y || continue
+        fi
+        "$HOME/.local/bin/lock-theme" "$pick" >/dev/null && ok "Lock screen theme: $pick (try it with Super+L)"
+    done
+}
+
+menu_keys() {
+    step "Keyboard shortcuts"
+    cat <<'KEYS' | sed 's/^/    /'
+Super (tap)            Launcher                 Super+Z            Noctalia settings
+Super+1..0             Go to workspace          Super+Shift+1..0   Move window there
+Super+Alt+1..0         Send window, stay here   Super+S / Alt+S    Scratchpad show / send
+Super+Shift+S          Screenshot (crop/window) Super+Shift+T      OCR text to clipboard
+Ctrl+Super+T           Wallpaper picker         Super+L            Lock
+Ctrl+Alt+Delete        Session menu             Super+X / Super+A  Control centre / notifications
+Super+V                Clipboard history        Super+Tab          Window switcher
+Ctrl+Alt+Up/Down/0     Kitty opacity            Scroll on bar      Left: brightness, right: volume
+Commands: lock-theme, sync-cachyos-config, Monitor Settings (launcher)
+KEYS
+}
+
+menu_sync() {
+    step "CachyOS default config"
+    command -v sync-cachyos-config >/dev/null || [ -x "$HOME/.local/bin/sync-cachyos-config" ] || { warn "sync-cachyos-config isn't installed."; return; }
+    local out; out=$("$HOME/.local/bin/sync-cachyos-config" 2>&1 || true)
+    printf '%s\n' "$out" | sed 's/^/    /'
+    if printf '%s' "$out" | grep -q -- "--apply"; then
+        ask "Take CachyOS's changes? (your own settings stay on top)" Y && "$HOME/.local/bin/sync-cachyos-config" --apply | sed 's/^/    /'
+    fi
+}
+
+menu_monitors() {
+    if [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] && command -v nwg-displays >/dev/null; then
+        info "Opening Monitor Settings..."
+        nwg-displays >/dev/null 2>&1 &
+    else
+        warn "Run this from inside Hyprland, or open 'Monitor Settings' from the launcher."
+    fi
+}
+
+if $INSTALLED && ! $YES && ! $DRY && ! $UNINSTALL && [ -r "$TTY" ]; then
+    while :; do
+        printf '\n%sSyn'"'"'s Noctalia%s %sis installed. What would you like to do?%s\n' "$B" "$N" "$D" "$N"
+        info "1) Change the lock screen theme (preview, switch, download more)"
+        info "2) Update / reinstall Syn's Noctalia (latest from GitHub; backs up first)"
+        info "3) Pull CachyOS's latest default config"
+        info "4) Arrange monitors"
+        info "5) Show keyboard shortcuts"
+        info "6) Restore a backup / uninstall"
+        info "q) Quit"
+        printf '    %s?%s Choice: ' "$Y" "$N" >"$TTY"
+        case "$(read_tty)" in
+            1) menu_lock ;;
+            2) break ;;
+            3) menu_sync ;;
+            4) menu_monitors ;;
+            5) menu_keys ;;
+            6) UNINSTALL=true; break ;;
+            q|Q|"") exit 0 ;;
+            *) warn "Not an option" ;;
+        esac
+    done
+fi
+
 # ---------- uninstall ----------
 if $UNINSTALL; then
     step "Restoring your previous configs"
@@ -169,7 +310,7 @@ if ! $NOPKG; then
     aur_install ai-usagebar-bin "Install ai-usagebar-bin from the AUR for the AI Usage bar plugin (Claude, Grok, Codex... quotas)?"
     aur_install linux-wallpaperengine-git "Install linux-wallpaperengine-git from the AUR for live Wallpaper Engine wallpapers (w-engine plugin; needs Wallpaper Engine on Steam; builds from source, takes a few minutes)?"
 fi
-if command -v ai-usagebar >/dev/null 2>&1 && ask "Turn on AI Usage for the AI tools already logged in on this machine?" Y; then
+if ! $INSTALLED && command -v ai-usagebar >/dev/null 2>&1 && ask "Turn on AI Usage for the AI tools already logged in on this machine?" Y; then
     run ai-usagebar detect >/dev/null && ok "AI Usage: enabled every provider with credentials here (change in the plugin's panel)"
 fi
 [ -d "$SKEL/.config/hypr" ] || $DRY || die "$SKEL/.config/hypr is missing; cachyos-hypr-noctalia must be installed."
@@ -426,5 +567,7 @@ else
     info "Log in to the Hyprland session to see everything."
 fi
 
+$DRY || { mkdir -p "$STATE"; date -Is >"$STATE/installed"; }
+
 printf '\n%sDone.%s Tap Super for the launcher, Super+Z for Noctalia settings, Ctrl+Alt+Del for the session menu.\n' "$G$B" "$N"
-printf '%sKeep up with CachyOS updates: sync-cachyos-config  |  Undo: re-run with --uninstall%s\n' "$D" "$N"
+printf '%sRun the same one-line command any time for the menu (lock themes, updates, shortcuts, restore)%s\n' "$D" "$N"

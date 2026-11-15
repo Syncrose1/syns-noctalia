@@ -8,6 +8,11 @@ curl -fsSL https://raw.githubusercontent.com/Syncrose1/syns-noctalia/main/instal
 ```
 
 Everything it replaces is backed up first, and every step asks before acting.
+
+**Already installed?** Run the same command any time and it opens a menu instead:
+change the lock screen theme (preview, switch, or download more), update / reinstall,
+pull CachyOS's latest defaults, arrange monitors, show the keyboard shortcuts, or restore a backup.
+
 Options go after `bash -s --`:
 
 ```sh
