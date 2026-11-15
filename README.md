@@ -37,7 +37,7 @@ curl -fsSL https://raw.githubusercontent.com/Syncrose1/syns-noctalia/main/instal
 - Workspaces always visible and split across monitors (per machine, see below)
 - Scroll on the empty left half of the bar for brightness, right half for volume
 - External monitor brightness over DDC/CI
-- Monitor utility: **Displays Settings** in the launcher (nwg-displays) to drag monitors around and set resolution, refresh rate, scale and rotation. It asks to keep the change and reverts otherwise; the layout is saved to `~/.config/hypr/monitors.lua`, which loads last
+- Monitor utility: **Monitor Settings** in the launcher (nwg-displays; also found by "display", "nwg", "resolution") to drag monitors around and set resolution, refresh rate, scale and rotation. It asks to keep the change and reverts otherwise; the layout is saved to `~/.config/hypr/monitors.lua`, which loads last
 - Flush bar, Inter font, slim workspace dots, quiet status icons that reveal on hover
 - Dolphin tiles; Qt/KDE apps follow Noctalia's colours (`QT_QPA_PLATFORMTHEME=kde`)
 - UK keyboard, normal pointer acceleration

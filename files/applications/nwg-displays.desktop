@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Monitor Settings
+GenericName=Displays Settings
+Comment=Arrange monitors and set resolution, refresh rate, scale and rotation (nwg-displays)
+Keywords=nwg;nwg-displays;display;displays;monitor;monitors;screen;resolution;refresh;scale;rotate;arrange;
+Exec=nwg-displays
+Icon=nwg-displays
+Terminal=false
+Categories=Settings;DesktopSettings;

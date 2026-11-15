@@ -165,6 +165,7 @@ MANAGED=(
     .local/bin/bar-scroll
     .local/bin/sync-cachyos-config
     .local/bin/ocr-region
+    .local/share/applications/nwg-displays.desktop
 )
 step "Backing up your current configs"
 run mkdir -p "$BACKUP/files"
@@ -221,6 +222,8 @@ fi
 run cp "$SRC/kitty/kitty.conf" "$HOME/.config/kitty/kitty.conf"
 run cp "$SRC/uwsm/env" "$HOME/.config/uwsm/env"
 run install -m755 "$SRC/bin/bar-scroll" "$SRC/bin/sync-cachyos-config" "$SRC/bin/ocr-region" "$HOME/.local/bin/"
+run mkdir -p "$HOME/.local/share/applications"
+run cp "$SRC/applications/nwg-displays.desktop" "$HOME/.local/share/applications/"  # searchable as "Monitor Settings"
 ok "Keybinds, workspaces, theming, kitty, bar scrolling, OCR and sync script"
 
 # ---------- this machine ----------
