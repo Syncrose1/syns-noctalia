@@ -20,7 +20,7 @@ STATE="$HOME/.local/state/syns-noctalia"
 SKEL=/etc/skel
 PACKAGES=(cachyos-hypr-noctalia grimblast-git inter-font jq bc tesseract tesseract-data-eng imagemagick nwg-displays
           hypridle git quickshell qt6-5compat qt6-multimedia qt6-multimedia-ffmpeg
-          gst-plugins-good gst-plugins-bad gst-plugins-ugly gst-libav)
+          gst-plugins-good gst-plugins-bad gst-plugins-ugly gst-libav mpvpaper socat)
 QYLOCK_REPO="https://github.com/Darkkal44/qylock.git"
 QYLOCK_COMMIT="c2933f27b655a999911e6699e1b2c67e59cbd428"   # tested with the patch in files/qylock
 QYLOCK_DEFAULT_THEMES="clockwork pixel-sakura enfield pixel-rainyroom"
@@ -452,6 +452,24 @@ else
     if $DRY; then info "[dry-run] write $NSET"
     else sed "s|@HOME@|$HOME|g" "$SRC/noctalia/settings.toml" >"$NSET"; fi
     ok "Installed"
+fi
+
+# ---------- video wallpapers ----------
+step "Video wallpapers (mpvpaper plugin)"
+run mkdir -p "$HOME/Videos/Wallpapers"
+ok "Drop videos or GIFs into ~/Videos/Wallpapers and pick them from the bar's film icon"
+WE_WORKSHOP="$HOME/.local/share/Steam/steamapps/workshop/content/431960"
+if [ -d "$WE_WORKSHOP" ] && command -v jq >/dev/null && ask "Link your Wallpaper Engine video wallpapers into ~/Videos/Wallpapers (no copies)?" Y; then
+    linked=0
+    for proj in "$WE_WORKSHOP"/*/project.json; do
+        [ "$(jq -r '.type // "" | ascii_downcase' "$proj" 2>/dev/null)" = video ] || continue
+        file="$(dirname "$proj")/$(jq -r '.file // ""' "$proj")"
+        [ -f "$file" ] || continue
+        name=$(jq -r '.title // "wallpaper"' "$proj" | tr -d '[]【】|/\\:*?"<>' | tr -s ' ' | cut -c1-60 | sed 's/ *$//')
+        link="$HOME/Videos/Wallpapers/${name:-wallpaper}.${file##*.}"
+        [ -e "$link" ] || { run ln -s "$file" "$link"; linked=$((linked + 1)); }
+    done
+    ok "Linked $linked video wallpaper(s)"
 fi
 
 # ---------- lock screen (qylock) ----------

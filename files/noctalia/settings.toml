@@ -5,7 +5,7 @@ background_opacity = 0.59999999999999998
 border_width = 0.0
 capsule_opacity = 1.0
 concave_edge_corners = true
-end = [ "media", "spacer_1", "tray", "wallpapers", "notifications", "network", "volume", "session" ]
+end = [ "media", "spacer_1", "tray", "videowall", "notifications", "network", "volume", "session" ]
 margin_edge = 0
 margin_ends = 0
 radius_bottom_left = 12
@@ -188,8 +188,12 @@ widget_order = [
     rotation = 0.0
     type = "weather"
 
+[plugin_settings."noctalia/mpvpaper"]
+mpv_options = "panscan=1.0"
+video_directory = "@HOME@/Videos/Wallpapers"
+
 [plugins]
-enabled = [ "micahg/nwg-displays", "felipeartur/ai-usagebar", "tadomika_ari/w-engine" ]
+enabled = [ "micahg/nwg-displays", "felipeartur/ai-usagebar", "tadomika_ari/w-engine", "noctalia/mpvpaper" ]
 
 [shell]
 font_family = "Inter"
@@ -235,6 +239,9 @@ format = "{:%H:%M  ·  %a %d %b}"
 
 [widget.network]
 peek = true
+
+[widget.videowall]
+type = "noctalia/mpvpaper:mpvpaper"
 
 [widget.volume]
 peek = true
