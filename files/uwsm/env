@@ -1,0 +1,6 @@
+# CachyOS's stock environment (refreshed from /etc/skel by ~/.local/bin/sync-cachyos-config)
+. "$HOME/.config/uwsm/env.cachyos"
+
+# --- My overrides ---
+export QT_QPA_PLATFORMTHEME="kde"  # KDE apps (Dolphin) read Noctalia's kcolorscheme this way
+[ -x /opt/zen-browser-bin/zen ] && export BROWSER=/opt/zen-browser-bin/zen

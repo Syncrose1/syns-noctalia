@@ -1,0 +1,53 @@
+#!/bin/sh
+# Refresh the stock CachyOS Hyprland/Noctalia config in ~/.config from /etc/skel
+# (installed by the cachyos-hypr-noctalia package). Personal changes live in separate
+# files that load on top of these, so they are never touched:
+#   ~/.config/hypr/hyprland.lua, ~/.config/hypr/user/, ~/.config/kitty/kitty.conf,
+#   ~/.config/uwsm/env, ~/.local/state/noctalia/settings.toml
+#
+# Usage: sync-cachyos-config          show what changed upstream
+#        sync-cachyos-config --apply  copy the new stock files in and reload
+
+SKEL=/etc/skel/.config
+CFG="$HOME/.config"
+apply=false
+[ "$1" = "--apply" ] && apply=true
+changed=0
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+
+# check <stock file> <local copy> [filter]
+check() {
+    src=$1 dst=$2
+    if [ -n "$3" ]; then sh -c "$3" < "$src" > "$tmp/src"; src="$tmp/src"; fi
+    if [ -f "$dst" ] && cmp -s "$src" "$dst"; then return; fi
+    changed=$((changed + 1))
+    echo "== ${dst#$HOME/}"
+    diff -u "$dst" "$src" 2>/dev/null | tail -n +3 || echo "   (new file)"
+    if $apply; then mkdir -p "$(dirname "$dst")"; cp "$src" "$dst"; fi
+}
+
+for f in "$SKEL"/hypr/config/*.lua; do
+    check "$f" "$CFG/hypr/config/$(basename "$f")"
+done
+check "$SKEL/hypr/xdph.conf" "$CFG/hypr/xdph.conf"
+check "$SKEL/kitty/kitty.conf" "$CFG/kitty/cachyos.conf" "sed '/# BEGIN_KITTY_THEME/,/# END_KITTY_THEME/d'"
+check "$SKEL/uwsm/env" "$CFG/uwsm/env.cachyos"
+check "$SKEL/noctalia/config.toml" "$CFG/noctalia/config.toml"
+
+# The entry point is mine, so flag it if CachyOS adds, removes or reorders config modules
+grep -o 'require("config\.[a-z_]*")' "$SKEL/hypr/hyprland.lua" > "$tmp/stock-order"
+grep -o 'require("config\.[a-z_]*")' "$CFG/hypr/hyprland.lua" > "$tmp/my-order"
+if ! cmp -s "$tmp/stock-order" "$tmp/my-order"; then
+    echo "!! CachyOS changed the module list in hyprland.lua; update ~/.config/hypr/hyprland.lua to match:"
+    diff "$tmp/my-order" "$tmp/stock-order"
+fi
+
+if [ "$changed" -eq 0 ]; then
+    echo "Stock config is up to date."
+elif $apply; then
+    hyprctl reload >/dev/null 2>&1 && echo "Applied $changed file(s) and reloaded Hyprland."
+    pkill -USR1 -x kitty 2>/dev/null
+else
+    echo "$changed stock file(s) differ. Run 'sync-cachyos-config --apply' to update them."
+fi

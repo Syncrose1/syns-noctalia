@@ -1,0 +1,13 @@
+#!/bin/sh
+# Scrolling on the bar: left half of the screen -> brightness, right half -> volume (end-4 style).
+# Usage: bar-scroll up|down
+dir=$1
+pos=$(hyprctl cursorpos -j)
+x=$(echo "$pos" | jq '.x')
+mon=$(hyprctl monitors -j | jq -r --argjson x "$x" '.[] | select($x >= .x and $x < .x + (.width / .scale)) | "\(.x) \(.width / .scale)"' | head -1)
+set -- $mon
+if [ -n "$1" ] && [ "$(echo "$x < $1 + $2 / 2" | bc)" = 1 ]; then
+    noctalia msg "brightness-$dir"
+else
+    noctalia msg "volume-$dir"
+fi

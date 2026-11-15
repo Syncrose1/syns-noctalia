@@ -1,0 +1,9 @@
+[Trigger]
+Operation = Upgrade
+Type = Package
+Target = cachyos-hypr-noctalia
+
+[Action]
+Description = CachyOS Hyprland/Noctalia defaults updated: run 'sync-cachyos-config' to review them
+When = PostTransaction
+Exec = /usr/bin/true

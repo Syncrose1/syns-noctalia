@@ -1,0 +1,223 @@
+config_version = 20
+
+[bar.default]
+background_opacity = 0.59999999999999998
+border_width = 0.0
+capsule = false
+capsule_opacity = 1.0
+concave_edge_corners = true
+margin_edge = 0
+margin_ends = 0
+radius_bottom_left = 12
+radius_bottom_right = 12
+radius_top_left = 0
+radius_top_right = 0
+scale = 1.1000000000000001
+start = [ "launcher", "clock" ]
+thickness = 35
+widget_spacing = 6
+
+    [bar.default.dead_zone.actions]
+    scroll_down = "exec @HOME@/.local/bin/bar-scroll down"
+    scroll_up = "exec @HOME@/.local/bin/bar-scroll up"
+
+[brightness]
+enable_ddcutil = true
+
+[calendar]
+enabled = true
+
+[desktop_widgets]
+schema_version = 2
+widget_order = [ "desktop-widget-0000000000000001", "desktop-widget-0000000000000002", "desktop-widget-0000000000000003" ]
+
+    [desktop_widgets.grid]
+    cell_size = 16
+    major_interval = 4
+    visible = true
+
+    [desktop_widgets.widget.desktop-widget-0000000000000001]
+    box_height = 192.0
+    box_width = 384.0
+    cx = 1232.0
+    cy = 364.0
+    output = "eDP-1"
+    placement_height = 1080.0
+    placement_width = 1920.0
+    rotation = 0.0
+    type = "clock"
+
+    [desktop_widgets.widget.desktop-widget-0000000000000002]
+    box_height = 480.0
+    box_width = 800.0
+    cx = 1440.0
+    cy = 732.0
+    output = "eDP-1"
+    placement_height = 1080.0
+    placement_width = 1920.0
+    rotation = 0.0
+    type = "calendar"
+
+    [desktop_widgets.widget.desktop-widget-0000000000000003]
+    box_height = 192.0
+    box_width = 384.0
+    cx = 1648.0
+    cy = 364.0
+    output = "eDP-1"
+    placement_height = 1080.0
+    placement_width = 1920.0
+    rotation = 0.0
+    type = "media_player"
+
+[dock]
+active_monitor_only = true
+border_width = 0.5
+enabled = true
+reserve_space = false
+show_dots = true
+smart_auto_hide = true
+
+[location]
+auto_locate = true
+
+[lockscreen]
+transition = [ "crt", "melt", "pixel" ]
+
+[lockscreen_widgets]
+enabled = true
+schema_version = 2
+widget_order = [
+    "lockscreen-login-box@eDP-1",
+    "lockscreen-login-box@HDMI-A-1",
+    "lockscreen-widget-0000000000000001",
+    "lockscreen-widget-0000000000000002"
+]
+
+    [lockscreen_widgets.grid]
+    cell_size = 16
+    major_interval = 4
+    visible = true
+
+    [lockscreen_widgets.widget."lockscreen-login-box@HDMI-A-1"]
+    box_height = 196.0
+    box_width = 810.0
+    cx = 1720.0
+    cy = 1258.0
+    output = "HDMI-A-1"
+    placement_height = 1440.0
+    placement_width = 3440.0
+    rotation = 0.0
+    type = "login_box"
+
+        [lockscreen_widgets.widget."lockscreen-login-box@HDMI-A-1".settings]
+        background_color = "surface_container"
+        background_opacity = 0.88
+        background_radius = 12.0
+        center_password_text = false
+        input_opacity = 1.0
+        input_radius = 6.0
+        layout = "regular"
+        show_caps_lock = true
+        show_keyboard_layout = true
+        show_login_button = true
+        show_media = true
+        show_media_controls = true
+        show_password_reveal = true
+        show_session_buttons = true
+        show_unlock_hint = true
+        show_weather = true
+
+    [lockscreen_widgets.widget."lockscreen-login-box@eDP-1"]
+    box_height = 196.0
+    box_width = 810.0
+    cx = 960.0
+    cy = 898.0
+    output = "eDP-1"
+    placement_height = 1080.0
+    placement_width = 1920.0
+    rotation = 0.0
+    type = "login_box"
+
+        [lockscreen_widgets.widget."lockscreen-login-box@eDP-1".settings]
+        background_color = "surface_container"
+        background_opacity = 0.88
+        background_radius = 12.0
+        center_password_text = false
+        input_opacity = 1.0
+        input_radius = 6.0
+        layout = "regular"
+        show_caps_lock = true
+        show_keyboard_layout = true
+        show_login_button = true
+        show_media = true
+        show_media_controls = true
+        show_password_reveal = true
+        show_session_buttons = true
+        show_unlock_hint = true
+        show_weather = true
+
+    [lockscreen_widgets.widget.lockscreen-widget-0000000000000001]
+    box_height = 96.0
+    box_width = 224.0
+    cx = 671.0999755859375
+    cy = 668.0
+    output = "eDP-1"
+    placement_height = 1080.0
+    placement_width = 1920.0
+    rotation = 0.0
+    type = "clock"
+
+    [lockscreen_widgets.widget.lockscreen-widget-0000000000000002]
+    box_height = 96.0
+    box_width = 544.0
+    cx = 1072.0
+    cy = 668.0
+    output = "eDP-1"
+    placement_height = 1080.0
+    placement_width = 1920.0
+    rotation = 0.0
+    type = "weather"
+
+[plugins]
+enabled = [ "tadomika_ari/w-engine" ]
+
+[shell]
+font_family = "Inter"
+telemetry_enabled = true
+
+    [shell.screenshot]
+    copy_to_clipboard = true
+    directory = "@HOME@/Pictures/Screenshots"
+    pipe_to_command = false
+    save_to_file = true
+
+[theme]
+builtin = "Rosé Pine"
+mode = "dark"
+shell_mode = "dark"
+source = "builtin"
+wallpaper_scheme = "m3-content"
+
+    [theme.templates]
+    builtin_ids = [ "alacritty", "btop", "gtk3", "gtk4", "hyprland", "kcolorscheme", "kitty", "qt" ]
+
+[wallpaper]
+directory = "@HOME@/Pictures/Wallpapers"
+
+
+
+
+
+[widget.clock]
+format = "{:%H:%M  ·  %a %d %b}"
+
+[widget.network]
+peek = true
+
+[widget.volume]
+peek = true
+
+[widget.workspaces]
+active_pill_size = 2.2000000000000002
+capsule = false
+pill_scale = 0.59999999999999998
