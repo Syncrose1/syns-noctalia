@@ -41,6 +41,7 @@ curl -fsSL https://raw.githubusercontent.com/Syncrose1/syns-noctalia/main/instal
 - Flush bar, Inter font, slim workspace dots, quiet status icons that reveal on hover
 - Dolphin tiles; Qt/KDE apps follow Noctalia's colours (`QT_QPA_PLATFORMTHEME=kde`)
 - UK keyboard, normal pointer acceleration
+- AI Usage in the bar (Claude Code, SuperGrok, …) via the `ai-usagebar` plugin; display profiles via the `nwg-displays` plugin (`/nwg` in the launcher)
 - Kitty at 85% opacity: **Ctrl+Alt+↑/↓** to adjust, **Ctrl+Alt+0** to reset; closes without confirming
 
 ## How it's layered
@@ -72,4 +73,4 @@ Hyprland for that). Tweak modes, positions and scale there, then copy it into th
 ## Requirements
 
 CachyOS (or the CachyOS repos) for `cachyos-hypr-noctalia`. The installer adds `grimblast-git`,
-`inter-font`, `jq`, `bc`, `tesseract`, `tesseract-data-eng`, `imagemagick` and `nwg-displays`, using `pacman -S --needed` (no full system upgrade).
+`inter-font`, `jq`, `bc`, `tesseract`, `tesseract-data-eng`, `imagemagick` and `nwg-displays`, using `pacman -S --needed` (no full system upgrade), and optionally `ai-usagebar-bin` from the AUR with paru or yay.

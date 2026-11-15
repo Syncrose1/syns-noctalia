@@ -150,6 +150,19 @@ else
         warn "Skipped. Some features won't work until these are installed."
     fi
 fi
+
+# AUR: the CLI behind the AI Usage bar plugin (felipeartur/ai-usagebar)
+if ! $NOPKG && ! pacman -Qq ai-usagebar-bin >/dev/null 2>&1; then
+    AUR=$(command -v paru || command -v yay || true)
+    if [ -z "$AUR" ]; then
+        warn "No AUR helper (paru/yay), so the AI Usage bar plugin's CLI (ai-usagebar-bin) was skipped."
+    elif ask "Install ai-usagebar-bin from the AUR for the AI Usage bar plugin (Claude, Grok, Codex... quotas)?" Y; then
+        run "$AUR" -S --needed ai-usagebar-bin && ok "ai-usagebar installed" || warn "ai-usagebar-bin failed to install"
+    fi
+fi
+if command -v ai-usagebar >/dev/null 2>&1 && ask "Turn on AI Usage for the AI tools already logged in on this machine?" Y; then
+    run ai-usagebar detect >/dev/null && ok "AI Usage: enabled every provider with credentials here (change in the plugin's panel)"
+fi
 [ -d "$SKEL/.config/hypr" ] || $DRY || die "$SKEL/.config/hypr is missing; cachyos-hypr-noctalia must be installed."
 
 # ---------- backup ----------

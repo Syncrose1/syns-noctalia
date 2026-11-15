@@ -3,7 +3,6 @@ config_version = 20
 [bar.default]
 background_opacity = 0.59999999999999998
 border_width = 0.0
-capsule = false
 capsule_opacity = 1.0
 concave_edge_corners = true
 margin_edge = 0
@@ -13,7 +12,7 @@ radius_bottom_right = 12
 radius_top_left = 0
 radius_top_right = 0
 scale = 1.1000000000000001
-start = [ "launcher", "clock" ]
+start = [ "launcher", "clock", "bar" ]
 thickness = 35
 widget_spacing = 6
 
@@ -179,7 +178,7 @@ widget_order = [
     type = "weather"
 
 [plugins]
-enabled = [ "tadomika_ari/w-engine", "micahg/nwg-displays" ]
+enabled = [ "micahg/nwg-displays", "felipeartur/ai-usagebar" ]
 
 [shell]
 font_family = "Inter"
@@ -207,6 +206,9 @@ directory = "@HOME@/Pictures/Wallpapers"
 
 
 
+
+[widget.bar]
+type = "felipeartur/ai-usagebar:bar"
 
 [widget.clock]
 format = "{:%H:%M  ·  %a %d %b}"
