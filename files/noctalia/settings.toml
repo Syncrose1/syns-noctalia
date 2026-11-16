@@ -4,7 +4,7 @@ config_version = 20
 background_opacity = 0.59999999999999998
 border_width = 0.0
 capsule_opacity = 1.0
-center = [ "workspaces" ]
+center = [ "wsgroups" ]
 concave_edge_corners = true
 end = [ "media", "spacer_1", "tray", "videowall", "notifications", "network", "volume", "session" ]
 margin_edge = 0
@@ -254,3 +254,16 @@ occupied_color = "on_surface"
 pill_scale = 0.59999999999999998
 show_icons = true
 style = "focus_hint"
+
+[widget.wsgroups]
+capsule_radius = 7
+group_by_workspace = true
+group_single_icon_per_app = true
+icon_scale = 1.3500000000000001
+label_source = "id"
+show_active_indicator = false
+show_workspace_label = false
+type = "taskbar"
+workspace_group_active_border_color = "primary"
+workspace_group_content = "icons"
+workspace_label_placement = "corner"
