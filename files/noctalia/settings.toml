@@ -4,6 +4,7 @@ config_version = 20
 background_opacity = 0.59999999999999998
 border_width = 0.0
 capsule_opacity = 1.0
+capsule_thickness = 0.76000000000000001
 center = [ "wsgroups" ]
 concave_edge_corners = true
 end = [ "media", "spacer_1", "tray", "videowall", "notifications", "network", "volume", "session" ]
@@ -234,6 +235,7 @@ directory = "@HOME@/Pictures/Wallpapers"
 
 [widget.bar]
 type = "felipeartur/ai-usagebar:bar"
+vendor = "anthropic"
 
 [widget.clock]
 format = "{:%H:%M  ·  %a %d %b}"
