@@ -93,3 +93,18 @@ hl.layer_rule({
     blur = true,
     ignore_alpha = 0.05,
 })
+
+-- Glassier blur (applies to everything blurred: bar, panels, desktop widgets, kitty):
+-- lighter than CachyOS's 4 passes so shapes stay faintly visible, with grain and colour
+hl.config({
+    decoration = {
+        blur = {
+            passes = 3,
+            size = 4,
+            noise = 0.045,
+            contrast = 1.12,
+            vibrancy = 0.55,
+            brightness = 1.02,
+        },
+    },
+})
