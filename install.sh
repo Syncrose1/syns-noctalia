@@ -168,16 +168,42 @@ menu_lock() {
 menu_keys() {
     step "Keyboard shortcuts"
     cat <<'KEYS' | sed 's/^/    /'
-Super (tap)            Launcher                 Super+Z            Noctalia settings
-Super+1..0             Go to workspace          Super+Shift+1..0   Move window there
-Super+Alt+1..0         Send window, stay here   Super+S / Alt+S    Scratchpad show / send
-Super+Shift+S          Screenshot (crop/window) Super+Shift+T      OCR text to clipboard
-Ctrl+Super+T           Wallpaper picker         Super+L            Lock
-Ctrl+Alt+Delete        Session menu             Super+X / Super+A  Control centre / notifications
-Super+V                Clipboard history        Super+Tab          Window switcher
-Ctrl+Alt+Up/Down/0     Kitty opacity            Scroll on bar      Left: brightness, right: volume
-Commands: lock-theme, sync-cachyos-config, Monitor Settings (launcher)
+Apps & windows
+  Super (tap)          Launcher (or Super+Space)     Super+Return       Terminal
+  Super+E              Files (Dolphin)               Super+W            Browser
+  Super+Q              Close window                  Super+F            Fullscreen
+  Super+Alt+Space      Float / tile window           Super+Tab          Window switcher
+Workspaces
+  Super+1..0           Go to workspace               Super+Shift+1..0   Move window there
+  Super+Alt+1..0       Send window, stay here        Super+scroll       Previous / next
+  Super+S              Show scratchpad               Super+Alt+S        Send window to scratchpad
+Capture
+  Super+Shift+S        Screenshot (drag or window)   Print / Super+Print  Region / full screen
+  Super+Shift+T        OCR text to clipboard
+Shell
+  Super+Z              Noctalia settings             Super+X / Super+A  Control centre / notifications
+  Super+V              Clipboard history             Ctrl+Super+T       Wallpaper picker
+  Super+L              Lock                          Ctrl+Alt+Delete    Session menu
+Bar & terminal
+  Scroll empty bar     Left: brightness, right: volume
+  Click a workspace box  Focus that app (middle-click closes it)
+  Ctrl+Alt+Up/Down/0   Kitty opacity (0 resets)
 KEYS
+    step "Syn's commands"
+    cat <<'CMDS' | sed 's/^/    /'
+lock-theme                    List lock screen themes (current one marked)
+lock-theme <name>             Switch theme; partial names work (e.g. clockwork)
+lock-theme --preview <name>   Preview a theme in a window, without locking
+lock-screen [theme]           Lock now (what Super+L runs)
+ocr-region [image]            OCR a dragged region, or an image file, to the clipboard
+sync-cachyos-config           See what CachyOS changed in its default config
+sync-cachyos-config --apply   Take those changes (your own layer stays on top)
+bar-scroll up|down            The bar's brightness/volume scroll (used by the bar)
+Monitor Settings              Arrange displays (search "monitor" in the launcher)
+This installer                curl -fsSL https://raw.githubusercontent.com/Syncrose1/syns-noctalia/main/install.sh | bash
+Your config                   ~/.config/hypr/user/shared.lua (all machines),
+                              ~/.config/hypr/user/hosts/<hostname>.lua (this machine)
+CMDS
 }
 
 menu_sync() {
@@ -206,7 +232,7 @@ if $INSTALLED && ! $YES && ! $DRY && ! $UNINSTALL && [ -r "$TTY" ]; then
         info "2) Update / reinstall Syn's Noctalia (latest from GitHub; backs up first)"
         info "3) Pull CachyOS's latest default config"
         info "4) Arrange monitors"
-        info "5) Show keyboard shortcuts"
+        info "5) Show keyboard shortcuts and Syn's commands"
         info "6) Restore a backup / uninstall"
         info "q) Quit"
         printf '    %s?%s Choice: ' "$Y" "$N" >"$TTY"
