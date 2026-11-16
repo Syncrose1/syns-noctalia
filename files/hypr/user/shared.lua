@@ -84,3 +84,12 @@ hl.config({ misc = { allow_session_lock_restore = true } })
 hl.on("hyprland.start", function () hl.exec_cmd("hypridle") end)
 hl.unbind("SUPER + L")
 hl.bind("SUPER + L", hl.dsp.exec_cmd("loginctl lock-session"), { description = "Lock screen" })
+
+-- Glass desktop widgets: blur what shows through their translucent backgrounds
+-- (CachyOS's Noctalia blur rule doesn't cover desktop widget layers)
+hl.layer_rule({
+    name = "noctalia-desktop-widgets",
+    match = { namespace = "^noctalia-desktop-widget-.+$" },
+    blur = true,
+    ignore_alpha = 0.05,
+})
