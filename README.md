@@ -46,7 +46,7 @@ curl -fsSL https://raw.githubusercontent.com/Syncrose1/syns-noctalia/main/instal
 - Monitor utility: **Monitor Settings** in the launcher (nwg-displays; also found by "display", "nwg", "resolution") to drag monitors around and set resolution, refresh rate, scale and rotation. It asks to keep the change and reverts otherwise; the layout is saved to `~/.config/hypr/monitors.lua`, which loads last
 - Flush bar, Inter font, quiet status icons that reveal on hover; workspaces alone in the centre as rounded boxes showing each workspace's app icons (active one outlined in the accent colour), and the window title on the left so they never shift
 - Dolphin tiles; Qt/KDE apps follow Noctalia's colours (`QT_QPA_PLATFORMTHEME=kde`)
-- UK keyboard, normal pointer acceleration
+- UK keyboard, normal pointer acceleration, natural scrolling on the touchpad only (mouse wheels unchanged)
 - AI Usage in the bar (Claude Code, SuperGrok, …) via the `ai-usagebar` plugin; display profiles via the `nwg-displays` plugin (`/nwg` in the launcher)
 - Video and GIF wallpapers via the `mpvpaper` plugin (film icon on the bar): drop files into `~/Pictures/Wallpapers`, shared with still wallpapers. Pauses when covered; slideshows supported. The installer can copy in the video wallpapers from a Wallpaper Engine library
 - Frosted-glass desktop widgets (light grey at 25% plus a Hyprland blur rule) and a glassier blur everywhere: 3 passes with light grain, contrast and colour vibrancy, so shapes stay faintly visible instead of a flat haze

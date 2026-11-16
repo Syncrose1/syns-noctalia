@@ -23,6 +23,8 @@ hl.config({
     input = {
         kb_layout = "gb",
         accel_profile = "adaptive",
+        -- Natural (inverted) scrolling on the touchpad only, like end-4; mouse wheels stay traditional
+        touchpad = { natural_scroll = true },
     },
 })
 
