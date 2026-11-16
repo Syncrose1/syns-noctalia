@@ -207,9 +207,9 @@ telemetry_enabled = true
 
     [shell.session]
     actions = [
-        { action = "lock", command = "loginctl lock-session", countdown_seconds = 0.0, enabled = true, shortcut = "1", variant = "default" },
+        { action = "command", command = "loginctl lock-session", countdown_seconds = 0.0, enabled = true, glyph = "lock", label = "Lock", shortcut = "1", variant = "default" },
         { action = "logout", countdown_seconds = 0.0, enabled = true, shortcut = "2", variant = "default" },
-        { action = "lock_and_suspend", command = "systemctl suspend", countdown_seconds = 3.0, enabled = true, shortcut = "3", variant = "default" },
+        { action = "command", command = "systemctl suspend", countdown_seconds = 3.0, enabled = true, glyph = "player-pause", label = "Lock & Suspend", shortcut = "3", variant = "default" },
         { action = "reboot", countdown_seconds = 3.0, enabled = true, shortcut = "4", variant = "default" },
         { action = "shutdown", countdown_seconds = 3.0, enabled = true, shortcut = "5", variant = "destructive" }
     ]
