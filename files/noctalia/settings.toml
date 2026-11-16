@@ -50,7 +50,7 @@ widget_order = [ "desktop-widget-0000000000000001", "desktop-widget-000000000000
     type = "clock"
 
         [desktop_widgets.widget.desktop-widget-0000000000000001.settings]
-        background_color = "#1f1d2e59"
+        background_color = "#c8c8cc40"
 
     [desktop_widgets.widget.desktop-widget-0000000000000002]
     box_height = 480.0
@@ -64,7 +64,7 @@ widget_order = [ "desktop-widget-0000000000000001", "desktop-widget-000000000000
     type = "calendar"
 
         [desktop_widgets.widget.desktop-widget-0000000000000002.settings]
-        background_color = "#1f1d2e59"
+        background_color = "#c8c8cc40"
 
     [desktop_widgets.widget.desktop-widget-0000000000000003]
     box_height = 192.0
@@ -78,7 +78,7 @@ widget_order = [ "desktop-widget-0000000000000001", "desktop-widget-000000000000
     type = "media_player"
 
         [desktop_widgets.widget.desktop-widget-0000000000000003.settings]
-        background_color = "#1f1d2e59"
+        background_color = "#c8c8cc40"
 
 [dock]
 active_monitor_only = true
