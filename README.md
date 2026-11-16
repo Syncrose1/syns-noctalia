@@ -44,7 +44,7 @@ curl -fsSL https://raw.githubusercontent.com/Syncrose1/syns-noctalia/main/instal
 - Scroll on the empty left half of the bar for brightness, right half for volume
 - External monitor brightness over DDC/CI
 - Monitor utility: **Monitor Settings** in the launcher (nwg-displays; also found by "display", "nwg", "resolution") to drag monitors around and set resolution, refresh rate, scale and rotation. It asks to keep the change and reverts otherwise; the layout is saved to `~/.config/hypr/monitors.lua`, which loads last
-- Flush bar, Inter font, slim workspace dots, quiet status icons that reveal on hover
+- Flush bar, Inter font, quiet status icons that reveal on hover; workspaces alone in the centre (Focus Hint: dots, with the active one expanded to show the focused app's icon) and the window title on the left, so the dots never shift
 - Dolphin tiles; Qt/KDE apps follow Noctalia's colours (`QT_QPA_PLATFORMTHEME=kde`)
 - UK keyboard, normal pointer acceleration
 - AI Usage in the bar (Claude Code, SuperGrok, …) via the `ai-usagebar` plugin; display profiles via the `nwg-displays` plugin (`/nwg` in the launcher)

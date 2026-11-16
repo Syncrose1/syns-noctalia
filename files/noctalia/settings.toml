@@ -4,6 +4,7 @@ config_version = 20
 background_opacity = 0.59999999999999998
 border_width = 0.0
 capsule_opacity = 1.0
+center = [ "workspaces" ]
 concave_edge_corners = true
 end = [ "media", "spacer_1", "tray", "videowall", "notifications", "network", "volume", "session" ]
 margin_edge = 0
@@ -13,7 +14,7 @@ radius_bottom_right = 12
 radius_top_left = 0
 radius_top_right = 0
 scale = 1.1000000000000001
-start = [ "launcher", "clock", "bar" ]
+start = [ "launcher", "clock", "bar", "spacer_1", "active_window" ]
 thickness = 35
 widget_spacing = 6
 
@@ -249,4 +250,7 @@ peek = true
 [widget.workspaces]
 active_pill_size = 2.2000000000000002
 capsule = false
+occupied_color = "on_surface"
 pill_scale = 0.59999999999999998
+show_icons = true
+style = "focus_hint"
