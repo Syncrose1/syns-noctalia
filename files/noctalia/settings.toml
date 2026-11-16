@@ -234,7 +234,7 @@ directory = "@HOME@/Pictures/Wallpapers"
 
 
 [widget.bar]
-quota_window = "weekly"
+quota_window = "session"
 type = "felipeartur/ai-usagebar:bar"
 vendor = "anthropic"
 
