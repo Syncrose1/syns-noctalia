@@ -1,0 +1,24 @@
+#!/usr/bin/env python3
+"""Copy this machine's Noctalia settings into the repo (files/noctalia/settings.toml), made portable:
+home paths become @HOME@, and per-machine bits are dropped: wallpaper picks and the per-monitor
+desktop widget copies made by desktop-widgets-everywhere (each machine makes its own).
+Run from anywhere: tools/snapshot-noctalia-settings"""
+import os, re, sys
+
+home = os.path.expanduser("~")
+src = os.path.join(home, ".local/state/noctalia/settings.toml")
+dst = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "files/noctalia/settings.toml")
+
+out, skip = [], False
+for line in open(src).read().splitlines():
+    s = line.strip()
+    if s.startswith("["):
+        skip = (re.match(r"\[wallpaper\.(default|last|monitors\.)", s) is not None) or ("desktop-widget-" in s and "@" in s)
+    if skip:
+        continue
+    if re.fullmatch(r'"desktop-widget-[^"]*@[^"]*",?', s):   # copy entries in widget_order
+        continue
+    out.append(line.replace(home, "@HOME@"))
+text = re.sub(r"\n{3,}", "\n\n", "\n".join(out) + "\n")
+open(dst, "w").write(text)
+print(f"Wrote {os.path.normpath(dst)}")

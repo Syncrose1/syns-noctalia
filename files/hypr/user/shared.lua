@@ -117,3 +117,9 @@ hl.window_rule({ match = { title = "^Finalist timer.*$" }, float = true, pin = t
 for i = 0, 7 do
     hl.window_rule({ match = { title = "^Finalist timer " .. i .. ":.*$" }, move = { "(monitor_w-344)", tostring(64 + 90 * i) } })
 end
+
+-- Desktop widgets on every monitor: copies follow the originals, and appear/disappear with monitors
+local widgets_everywhere = "sleep 2; " .. HOME .. "/.local/bin/desktop-widgets-everywhere"
+for _, ev in ipairs({ "hyprland.start", "monitor.added", "monitor.removed" }) do
+    hl.on(ev, function () hl.exec_cmd(widgets_everywhere) end)
+end

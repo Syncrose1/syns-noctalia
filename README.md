@@ -49,6 +49,7 @@ curl -fsSL https://raw.githubusercontent.com/Syncrose1/syns-noctalia/main/instal
 - UK keyboard, normal pointer acceleration, natural scrolling on the touchpad only (mouse wheels unchanged)
 - AI Usage in the bar (Claude Code, SuperGrok, …) via the `ai-usagebar` plugin; display profiles via the `nwg-displays` plugin (`/nwg` in the launcher)
 - Video and GIF wallpapers via the `mpvpaper` plugin (film icon on the bar): drop files into `~/Pictures/Wallpapers`, shared with still wallpapers. Pauses when covered; slideshows supported. The installer can copy in the video wallpapers from a Wallpaper Engine library
+- Desktop widgets on every monitor: your originals are copied to each connected monitor (re-synced at login and when monitors are plugged in/out)
 - Frosted-glass desktop widgets (light grey at 25% plus a Hyprland blur rule) and a glassier blur everywhere: 3 passes with light grain, contrast and colour vibrancy, so shapes stay faintly visible instead of a flat haze
 - Kitty at 85% opacity: **Ctrl+Alt+↑/↓** to adjust, **Ctrl+Alt+0** to reset; closes without confirming
 
@@ -84,7 +85,7 @@ then Ctrl+Alt+F1.
 | Owner | Files |
 |---|---|
 | CachyOS (stock, refreshed from `/etc/skel`) | `~/.config/hypr/config/*.lua`, `kitty/cachyos.conf`, `uwsm/env.cachyos`, `noctalia/config.toml` |
-| This repo | `~/.config/hypr/hyprland.lua`, `~/.config/hypr/user/`, `kitty/kitty.conf`, `uwsm/env`, Noctalia's `settings.toml`, `~/.config/hypr/hypridle.conf`, `~/.local/bin/{bar-scroll,ocr-region,lock-screen,lock-theme,syns-host-init,sync-cachyos-config}` |
+| This repo | `~/.config/hypr/hyprland.lua`, `~/.config/hypr/user/`, `kitty/kitty.conf`, `uwsm/env`, Noctalia's `settings.toml`, `~/.config/hypr/hypridle.conf`, `~/.local/bin/{bar-scroll,ocr-region,lock-screen,lock-theme,syns-host-init,desktop-widgets-everywhere,sync-cachyos-config}` |
 | qylock (upstream + patch) | `~/.local/share/quickshell-lockscreen`, `~/.local/share/qylock/themes`, `~/.config/qylock/theme` |
 | Noctalia (generated) | `~/.config/hypr/noctalia.lua`, `kitty/themes/noctalia.conf` |
 | Monitor utility (per machine) | `~/.config/hypr/monitors.lua`, `~/.config/hypr/workspaces.lua` |

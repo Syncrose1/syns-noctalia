@@ -97,6 +97,11 @@ if [ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] && [ -z "${SYNS_NO_HYPR:-}" ]; then
 fi
 IN_HYPR=false
 command -v hyprctl >/dev/null && [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] && hyprctl version >/dev/null 2>&1 && IN_HYPR=true
+if $IN_HYPR && [ -z "${WAYLAND_DISPLAY:-}" ]; then
+    hpid=$(pgrep -u "$(id -u)" -x Hyprland | head -1)
+    [ -n "$hpid" ] && export WAYLAND_DISPLAY=$(tr '\0' '\n' <"/proc/$hpid/environ" 2>/dev/null | sed -n 's/^WAYLAND_DISPLAY=//p')
+    [ -n "${WAYLAND_DISPLAY:-}" ] || export WAYLAND_DISPLAY=$(ls "$XDG_RUNTIME_DIR" | grep -E '^wayland-[0-9]+$' | head -1)
+fi
 
 # ---------- menu (when already installed) ----------
 # First install, --yes, --dry-run, --uninstall or no terminal: skip straight to the work.
@@ -216,6 +221,7 @@ sync-cachyos-config           See what CachyOS changed in its default config
 sync-cachyos-config --apply   Take those changes (your own layer stays on top)
 bar-scroll up|down            The bar's brightness/volume scroll (used by the bar)
 syns-host-init [--force]      Create this machine's host file from its monitors (and NVIDIA)
+desktop-widgets-everywhere    Copy desktop widgets onto every monitor (runs at login and on hotplug)
 Monitor Settings              Arrange displays (search "monitor" in the launcher)
 This installer                curl -fsSL https://raw.githubusercontent.com/Syncrose1/syns-noctalia/main/install.sh | bash
 Your config                   ~/.config/hypr/user/shared.lua (all machines),
@@ -405,6 +411,7 @@ MANAGED=(
     .local/bin/lock-screen
     .local/bin/lock-theme
     .local/bin/syns-host-init
+    .local/bin/desktop-widgets-everywhere
     .local/share/quickshell-lockscreen
     .local/share/qylock
     .config/qylock
@@ -487,7 +494,7 @@ fi
 run cp "$SRC/kitty/kitty.conf" "$HOME/.config/kitty/kitty.conf"
 run cp "$SRC/uwsm/env" "$HOME/.config/uwsm/env"
 run install -m755 "$SRC/bin/bar-scroll" "$SRC/bin/sync-cachyos-config" "$SRC/bin/ocr-region" \
-    "$SRC/bin/lock-screen" "$SRC/bin/lock-theme" "$SRC/bin/syns-host-init" "$HOME/.local/bin/"
+    "$SRC/bin/lock-screen" "$SRC/bin/lock-theme" "$SRC/bin/syns-host-init" "$SRC/bin/desktop-widgets-everywhere" "$HOME/.local/bin/"
 run cp "$SRC/hypr/hypridle.conf" "$HOME/.config/hypr/hypridle.conf"
 run mkdir -p "$HOME/.local/share/applications"
 run cp "$SRC/applications/nwg-displays.desktop" "$HOME/.local/share/applications/"  # searchable as "Monitor Settings"
@@ -514,8 +521,14 @@ if [ -f "$NSET" ] && ! ask "Replace your Noctalia settings with Syn's? (yours ar
 else
     run mkdir -p "$(dirname "$NSET")"
     if $DRY; then info "[dry-run] write $NSET"
-    else sed "s|@HOME@|$HOME|g" "$SRC/noctalia/settings.toml" >"$NSET"; fi
-    ok "Installed"
+    else
+        # Keep this machine's wallpaper picks (the repo's snapshot has none)
+        keep=""
+        [ -f "$NSET" ] && keep=$(awk '/^ *\[/{k = ($0 ~ /^ *\[wallpaper\.(default|last|monitors\.)/)} k' "$NSET")
+        sed "s|@HOME@|$HOME|g" "$SRC/noctalia/settings.toml" >"$NSET"
+        [ -n "$keep" ] && printf '\n%s\n' "$keep" >>"$NSET"
+    fi
+    ok "Installed${keep:+ (kept your wallpaper picks)}"
 fi
 
 # ---------- video wallpapers ----------
@@ -661,6 +674,10 @@ if $IN_HYPR; then
     done
     if command -v noctalia >/dev/null && ! pgrep -x noctalia >/dev/null; then
         run hyprctl dispatch 'hl.dsp.exec_cmd("noctalia")' >/dev/null && ok "Noctalia started"
+    fi
+    # Desktop widgets onto this machine's monitors (copies on every monitor)
+    if ! $DRY && pgrep -x noctalia >/dev/null; then
+        out=$("$HOME/.local/bin/desktop-widgets-everywhere" 2>&1) && ok "$out" || warn "Desktop widgets: $out"
     fi
     if command -v hypridle >/dev/null && ! pgrep -x hypridle >/dev/null; then
         run hyprctl dispatch 'hl.dsp.exec_cmd("hypridle")' >/dev/null && ok "hypridle started"

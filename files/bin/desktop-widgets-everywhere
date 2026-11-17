@@ -1,0 +1,101 @@
+#!/usr/bin/env python3
+"""Show Noctalia's desktop widgets on every connected monitor.
+
+Noctalia pins each desktop widget to one monitor. This keeps your original widgets as the
+"masters" and gives every other connected monitor a copy (id "<master>@<monitor>"), re-synced
+from the master each run, so moving or restyling a master carries over at the next run.
+A master pinned to a monitor that isn't connected is moved to the main monitor, and copies for
+monitors that aren't connected are switched off until they come back.
+
+Runs at every Hyprland login (user/shared.lua).
+  desktop-widgets-everywhere            apply
+  desktop-widgets-everywhere --dry-run  show what would change
+"""
+import json, os, subprocess, sys, time, tomllib
+
+DRY = "--dry-run" in sys.argv
+
+
+def sh(*args, check=True):
+    return subprocess.run(args, capture_output=True, text=True, check=check).stdout
+
+
+def toml_value(v):
+    if isinstance(v, bool):
+        return "true" if v else "false"
+    if isinstance(v, (int, float)):
+        return repr(v)
+    if isinstance(v, str):
+        return "'" + v.replace("'", "") + "'"
+    if isinstance(v, list):
+        return "[ " + ", ".join(toml_value(x) for x in v) + " ]"
+    raise TypeError(f"unsupported value {v!r}")
+
+
+def flat(prefix, table):
+    """Yield (dotted.path, value) for every leaf in a widget table."""
+    for k, v in table.items():
+        if isinstance(v, dict):
+            yield from flat(f'{prefix}.{k}', v)
+        else:
+            yield f'{prefix}.{k}', v
+
+
+def main():
+    # Wait for Hyprland and Noctalia (this also runs at login, before they're fully up)
+    for _ in range(30):
+        try:
+            monitors = json.loads(sh("hyprctl", "monitors", "-j"))
+            cfg = tomllib.loads(sh("noctalia", "msg", "config-get", "desktop_widgets"))
+            break
+        except Exception:
+            time.sleep(1)
+    else:
+        sys.exit("Hyprland or Noctalia isn't running")
+
+    order = list(cfg.get("widget_order", []))
+    widgets = cfg.get("widget", {})
+    if not widgets:
+        return
+    # Internal panel first, then by position
+    names = [m["name"] for m in sorted(monitors, key=lambda m: (not m["name"].startswith(("eDP", "LVDS", "DSI")), m["x"], m["y"]))]
+    main_mon = names[0]
+
+    masters = [w for w in (order or widgets) if "@" not in w and w in widgets]
+    sets, new_order = [], []
+    for mid in masters:
+        master = widgets[mid]
+        if master.get("output") not in names:
+            sets.append((f'desktop_widgets.widget."{mid}".output', main_mon))
+            master = dict(master, output=main_mon)
+        new_order.append(mid)
+        for mon in names:
+            if mon == master["output"]:
+                continue
+            cid = f"{mid}@{mon}"
+            clone = dict(master, output=mon)
+            for path, v in flat(f'desktop_widgets.widget."{cid}"', clone):
+                sets.append((path, v))
+            new_order.append(cid)
+    # Copies for monitors that aren't connected are switched off (Noctalia would otherwise draw
+    # them on another monitor); they're re-synced and switched back on when it reconnects
+    for w in order:
+        if "@" in w and w not in new_order and w.split("@")[0] in masters:
+            new_order.append(w)
+            if widgets.get(w, {}).get("enabled", True):
+                sets.append((f'desktop_widgets.widget."{w}".enabled', False))
+    if new_order != order:
+        sets.append(("desktop_widgets.widget_order", new_order))
+
+    for path, v in sets:
+        if DRY:
+            print(f"{path} = {toml_value(v)}")
+        else:
+            subprocess.run(["noctalia", "msg", "config-set", path, toml_value(v)], capture_output=True, check=False)
+    if not DRY:
+        copies = len([w for w in new_order if "@" in w and w.split("@", 1)[1] in names])
+        print(f"Desktop widgets: {len(masters)} on {main_mon if len(names) == 1 else 'every monitor'} ({copies} cop{'y' if copies == 1 else 'ies'}) across {', '.join(names)}")
+
+
+if __name__ == "__main__":
+    main()

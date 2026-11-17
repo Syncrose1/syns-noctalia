@@ -31,7 +31,11 @@ enabled = true
 
 [desktop_widgets]
 schema_version = 2
-widget_order = [ "desktop-widget-0000000000000001", "desktop-widget-0000000000000002", "desktop-widget-0000000000000003" ]
+widget_order = [
+    "desktop-widget-0000000000000001",
+    "desktop-widget-0000000000000002",
+    "desktop-widget-0000000000000003",
+]
 
     [desktop_widgets.grid]
     cell_size = 16
@@ -237,10 +241,6 @@ wallpaper_scheme = "m3-content"
 
 [wallpaper]
 directory = "@HOME@/Pictures/Wallpapers"
-
-
-
-
 
 [widget.bar]
 quota_window = "session"
