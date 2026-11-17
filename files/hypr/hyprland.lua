@@ -16,6 +16,9 @@ local f = io.open(host_file, "r")
 if f then
     f:close()
     host = dofile(host_file)
+else
+    -- New machine: create the host file from the connected monitors at first login
+    hl.on("hyprland.start", function () hl.exec_cmd(os.getenv("HOME") .. "/.local/bin/syns-host-init") end)
 end
 
 -- CachyOS Hyprland Configuration (same order as /etc/skel/.config/hypr/hyprland.lua)

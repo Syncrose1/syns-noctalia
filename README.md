@@ -84,7 +84,7 @@ then Ctrl+Alt+F1.
 | Owner | Files |
 |---|---|
 | CachyOS (stock, refreshed from `/etc/skel`) | `~/.config/hypr/config/*.lua`, `kitty/cachyos.conf`, `uwsm/env.cachyos`, `noctalia/config.toml` |
-| This repo | `~/.config/hypr/hyprland.lua`, `~/.config/hypr/user/`, `kitty/kitty.conf`, `uwsm/env`, Noctalia's `settings.toml`, `~/.config/hypr/hypridle.conf`, `~/.local/bin/{bar-scroll,ocr-region,lock-screen,lock-theme,sync-cachyos-config}` |
+| This repo | `~/.config/hypr/hyprland.lua`, `~/.config/hypr/user/`, `kitty/kitty.conf`, `uwsm/env`, Noctalia's `settings.toml`, `~/.config/hypr/hypridle.conf`, `~/.local/bin/{bar-scroll,ocr-region,lock-screen,lock-theme,syns-host-init,sync-cachyos-config}` |
 | qylock (upstream + patch) | `~/.local/share/quickshell-lockscreen`, `~/.local/share/qylock/themes`, `~/.config/qylock/theme` |
 | Noctalia (generated) | `~/.config/hypr/noctalia.lua`, `kitty/themes/noctalia.conf` |
 | Monitor utility (per machine) | `~/.config/hypr/monitors.lua`, `~/.config/hypr/workspaces.lua` |
@@ -100,11 +100,23 @@ sync-cachyos-config           # see what CachyOS changed
 sync-cachyos-config --apply   # take it; your layer stays on top
 ```
 
-## New machine
+## New machine, or one with another setup
 
-The installer creates `user/hosts/<hostname>.lua` from the detected monitors (run it from inside
-Hyprland for that). Tweak modes, positions and scale there, then copy it into this repo's
-`files/hypr/user/hosts/` so it's restored next time.
+The installer gets any CachyOS machine up to scratch: a fresh install, or one already running Hyprland
+with another shell (end-4, Caelestia, DankMaterialShell, HyprPanel...) or other dotfiles. It:
+
+- offers to uninstall other shells (their configs stay in the backup; GNOME/KDE are left alone) and
+  swaps out packages that conflict (other Quickshell builds, other CachyOS desktop-settings packages)
+- clears other dotfiles out of `~/.config/hypr` (backed up) and lists any personal tweaks it found so you
+  can port them into `user/shared.lua` or `user/hosts/<hostname>.lua`
+- creates `user/hosts/<hostname>.lua` with `syns-host-init` from the connected monitors, adding the NVIDIA
+  settings when an NVIDIA card drives a display. On a fresh install it runs automatically at first login.
+  Copy the file into this repo's `files/hypr/user/hosts/` to keep it.
+- offers SDDM if no login manager is enabled
+- switches a running session over live (stops the old shell, starts Noctalia), even over SSH
+
+If pacman reports 404s, the machine's package database is stale: run `sudo pacman -Syu` and re-run.
+For unattended or remote runs: `SUDO_ASKPASS=/path/to/askpass bash install.sh --yes`.
 
 ## Requirements
 

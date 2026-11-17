@@ -18,7 +18,7 @@ hl.env("XCURSOR_THEME", "Bibata-Modern-Ice")
 hl.env("XCURSOR_SIZE", "24")
 hl.env("BROWSER", BROWSER)
 
--- Input: UK keyboard, and normal pointer acceleration instead of CachyOS's flat profile
+-- Input: UK keyboard on every machine, and normal pointer acceleration instead of CachyOS's flat profile
 hl.config({
     input = {
         kb_layout = "gb",
@@ -110,3 +110,10 @@ hl.config({
         },
     },
 })
+
+-- Finalist timers: small pinned floating windows stacked down the right edge
+hl.window_rule({ match = { title = "^Finalist timer.*$" }, float = true, pin = true, no_initial_focus = true,
+    no_shadow = true, border_size = 0, no_anim = true, size = { "320", "78" } })
+for i = 0, 7 do
+    hl.window_rule({ match = { title = "^Finalist timer " .. i .. ":.*$" }, move = { "(monitor_w-344)", tostring(64 + 90 * i) } })
+end

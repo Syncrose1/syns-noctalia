@@ -82,6 +82,22 @@ run() { # run a command, or print it in dry-run mode
 command -v pacman >/dev/null || die "This needs an Arch-based system with pacman (CachyOS recommended)."
 command -v curl >/dev/null || die "curl is required."
 
+# sudo: interactive normally; with SUDO_ASKPASS set (e.g. remote/unattended runs) use it
+SUDO=(sudo); AURFLAGS=()
+if [ -n "${SUDO_ASKPASS:-}" ]; then SUDO=(sudo -A); AURFLAGS=(--sudoflags=-A); fi
+$YES && AURFLAGS+=(--noconfirm)
+
+# A Hyprland session running for this user? (also found when connected over SSH)
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+[ -n "${SYNS_NO_HYPR:-}" ] && unset HYPRLAND_INSTANCE_SIGNATURE   # tests: never touch a live session
+if [ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] && [ -z "${SYNS_NO_HYPR:-}" ]; then
+    for sig in $(ls -t "$XDG_RUNTIME_DIR/hypr" 2>/dev/null); do
+        if HYPRLAND_INSTANCE_SIGNATURE=$sig hyprctl version >/dev/null 2>&1; then export HYPRLAND_INSTANCE_SIGNATURE=$sig; break; fi
+    done
+fi
+IN_HYPR=false
+command -v hyprctl >/dev/null && [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] && hyprctl version >/dev/null 2>&1 && IN_HYPR=true
+
 # ---------- menu (when already installed) ----------
 # First install, --yes, --dry-run, --uninstall or no terminal: skip straight to the work.
 INSTALLED=false
@@ -126,7 +142,7 @@ menu_lock() {
         done
         local first_dl=$((i + 1))
         for f in $families; do
-            printf '%s\n' "$installed" | grep -q "^$f\(/\|$\)" && continue
+            printf '%s\n' "$installed" | grep -c "^$f\(/\|$\)" >/dev/null && continue
             i=$((i + 1)); opts[$i]="+$f"
             info "$(printf '%2d) %s  %s(download)%s' $i "$f" "$D" "$N")"
         done
@@ -152,7 +168,7 @@ menu_lock() {
             elif [ -f "$themes_dir/$fam/orbital/Main.qml" ]; then pick="$fam/orbital"
             else pick=$(find "$themes_dir/$fam" -name Main.qml -printf '%h\n' | sed "s|^$themes_dir/||" | sort | head -1); fi
             ok "Downloaded $fam"
-            if [ -d "$themes_dir/$pick/font" ] && ! ls "$themes_dir/$pick/font" 2>/dev/null | grep -qiE '\.(ttf|otf)$'; then
+            if [ -d "$themes_dir/$pick/font" ] && ! ls "$themes_dir/$pick/font" 2>/dev/null | grep -ciE '\.(ttf|otf)$' >/dev/null; then
                 warn "This theme expects a font qylock can't ship; see the qylock README (fonts) and put it in $themes_dir/$pick/font/"
             fi
         fi
@@ -199,6 +215,7 @@ ocr-region [image]            OCR a dragged region, or an image file, to the cli
 sync-cachyos-config           See what CachyOS changed in its default config
 sync-cachyos-config --apply   Take those changes (your own layer stays on top)
 bar-scroll up|down            The bar's brightness/volume scroll (used by the bar)
+syns-host-init [--force]      Create this machine's host file from its monitors (and NVIDIA)
 Monitor Settings              Arrange displays (search "monitor" in the launcher)
 This installer                curl -fsSL https://raw.githubusercontent.com/Syncrose1/syns-noctalia/main/install.sh | bash
 Your config                   ~/.config/hypr/user/shared.lua (all machines),
@@ -211,7 +228,7 @@ menu_sync() {
     command -v sync-cachyos-config >/dev/null || [ -x "$HOME/.local/bin/sync-cachyos-config" ] || { warn "sync-cachyos-config isn't installed."; return; }
     local out; out=$("$HOME/.local/bin/sync-cachyos-config" 2>&1 || true)
     printf '%s\n' "$out" | sed 's/^/    /'
-    if printf '%s' "$out" | grep -q -- "--apply"; then
+    if printf '%s' "$out" | grep -c -- "--apply" >/dev/null; then
         ask "Take CachyOS's changes? (your own settings stay on top)" Y && "$HOME/.local/bin/sync-cachyos-config" --apply | sed 's/^/    /'
     fi
 }
@@ -301,6 +318,22 @@ else
     SRC=$(echo "$TMP"/*/files)
 fi
 
+# ---------- old desktop shells ----------
+# Other shells/rices clash with Noctalia (bars, notifications, launchers, their own Quickshell)
+RIVAL_RE='^(illogical-impulse-.*|caelestia-(shell|cli|meta)|dms-shell.*|dux-shell|hyprpanel|noctalia-shell|ags-hyprpanel-git)$'
+rivals=$(pacman -Qq | grep -E "$RIVAL_RE" | tr '\n' ' ' || true)
+if [ -n "$rivals" ]; then
+    step "Other desktop shells"
+    info "Installed: $rivals"
+    info "Their configs are kept in the backup; GNOME/KDE and other desktops are left alone."
+    if ! $NOPKG && ask "Uninstall these shells so they can't clash with Noctalia?" Y; then
+        # plain -R: their dependencies (Hyprland, kitty, fonts...) stay installed
+        run "${SUDO[@]}" pacman -R --noconfirm $rivals && ok "Removed" || warn "Couldn't remove some; continuing"
+    else
+        warn "Kept them installed (they won't start, but may still clash)"
+    fi
+fi
+
 # ---------- packages ----------
 step "Packages"
 missing=()
@@ -316,7 +349,22 @@ else
     fi
     info "Installed with 'pacman -S --needed' (no full system upgrade)."
     if ask "Install them now?" Y; then
-        run sudo pacman -S --needed "${missing[@]}" || die "Package install failed. If pacman says a package is out of date, run 'sudo pacman -Syu' first, then re-run this."
+        # Packages that would block the install:
+        # - other builds of Quickshell (e.g. end-4's) conflict with the regular quickshell qylock needs
+        # - other CachyOS desktop default-settings packages conflict with cachyos-hypr-noctalia
+        blockers=""
+        for q in $(pacman -Qq | grep -E '^(.*-)?quickshell(-git)?$' | grep -vx quickshell || true); do blockers="$blockers $q"; done
+        if [[ " ${missing[*]} " == *" cachyos-hypr-noctalia "* ]]; then
+            for d in $(pacman -Qq | grep -E '^cachyos-.*-settings$' || true); do
+                pacman -Qi "$d" 2>/dev/null | grep -c '^Provides .*cachyos-desktop-settings' >/dev/null && blockers="$blockers $d"
+            done
+        fi
+        if [ -n "$blockers" ]; then
+            info "Replacing conflicting packages:$blockers"
+            run "${SUDO[@]}" pacman -Rdd --noconfirm $blockers || warn "Couldn't remove:$blockers"
+        fi
+        PACFLAGS=(); $YES && PACFLAGS=(--noconfirm)
+        run "${SUDO[@]}" pacman -S --needed "${PACFLAGS[@]}" "${missing[@]}" || die "Package install failed. If pacman says a package is out of date, run 'sudo pacman -Syu' first, then re-run this."
         ok "Installed"
     else
         warn "Skipped. Some features won't work until these are installed."
@@ -328,7 +376,7 @@ aur_install() { # aur_install <package> <question>
     pacman -Qq "$1" >/dev/null 2>&1 && { ok "$1 already installed"; return; }
     if [ -z "${AUR:-}" ]; then warn "No AUR helper (paru/yay), so $1 was skipped."; return; fi
     if ask "$2" Y; then
-        run "$AUR" -S --needed "$1" && ok "$1 installed" || warn "$1 failed to install"
+        run "$AUR" -S --needed "${AURFLAGS[@]}" "$1" && ok "$1 installed" || warn "$1 failed to install"
     fi
 }
 if ! $NOPKG; then
@@ -356,6 +404,7 @@ MANAGED=(
     .local/share/applications/nwg-displays.desktop
     .local/bin/lock-screen
     .local/bin/lock-theme
+    .local/bin/syns-host-init
     .local/share/quickshell-lockscreen
     .local/share/qylock
     .config/qylock
@@ -370,6 +419,29 @@ for rel in "${MANAGED[@]}"; do
     fi
 done
 ok "Saved to ${BACKUP/#$HOME/~} (undo with --uninstall)"
+
+# Clear out other dotfiles' Hyprland config (it's all in the backup). Keeps Syn's layer,
+# CachyOS's base, Noctalia's generated colours and Monitor Settings' layout.
+HKEEP='^(config|user|hyprland\.lua|xdph\.conf|hypridle\.conf|noctalia\.lua|monitors\.(lua|conf)|workspaces\.(lua|conf))$'
+old_items=$(ls -A "$HOME/.config/hypr" 2>/dev/null | grep -Ev "$HKEEP" || true)
+if [ -n "$old_items" ]; then
+    step "Clearing out the previous Hyprland config"
+    # Personal tweaks worth flagging: files in personal folders (e.g. end-4's custom/) and loose
+    # top-level files, skipping framework internals, backups and files with no real settings
+    personal=""
+    for f in $(cd "$HOME/.config/hypr" 2>/dev/null && find $old_items -type f \( -path 'custom/*' -o -path 'user/*' -o ! -path '*/*' \) 2>/dev/null); do
+        case "$f" in *.bak*|*.new|*.old|*bak-*|_archive*) continue ;; esac
+        grep -vE '^[[:space:]]*(--|#|$)' "$HOME/.config/hypr/$f" 2>/dev/null | grep -c . >/dev/null && personal="$personal$f
+"
+    done
+    for item in $old_items; do run rm -rf "${HOME:?}/.config/hypr/$item"; done
+    ok "Moved aside: $(printf '%s ' $old_items)(all kept in the backup)"
+    if [ -n "$personal" ]; then
+        warn "Personal tweaks there aren't carried over automatically. Port what you need into"
+        info "~/.config/hypr/user/shared.lua (all machines) or user/hosts/<hostname>.lua. They were:"
+        printf '%s' "$personal" | sed 's/^/        /'
+    fi
+fi
 
 # ---------- CachyOS base ----------
 step "CachyOS stock config (the base layer)"
@@ -415,7 +487,7 @@ fi
 run cp "$SRC/kitty/kitty.conf" "$HOME/.config/kitty/kitty.conf"
 run cp "$SRC/uwsm/env" "$HOME/.config/uwsm/env"
 run install -m755 "$SRC/bin/bar-scroll" "$SRC/bin/sync-cachyos-config" "$SRC/bin/ocr-region" \
-    "$SRC/bin/lock-screen" "$SRC/bin/lock-theme" "$HOME/.local/bin/"
+    "$SRC/bin/lock-screen" "$SRC/bin/lock-theme" "$SRC/bin/syns-host-init" "$HOME/.local/bin/"
 run cp "$SRC/hypr/hypridle.conf" "$HOME/.config/hypr/hypridle.conf"
 run mkdir -p "$HOME/.local/share/applications"
 run cp "$SRC/applications/nwg-displays.desktop" "$HOME/.local/share/applications/"  # searchable as "Monitor Settings"
@@ -424,47 +496,14 @@ ok "Keybinds, workspaces, theming, kitty, bar scrolling, OCR, lock wiring and sy
 # ---------- this machine ----------
 HOST=${SYNS_NOCTALIA_HOST:-$(cat /etc/hostname 2>/dev/null || hostname)}
 HOSTFILE="$HOME/.config/hypr/user/hosts/$HOST.lua"
-TMP_HOST=$(mktemp)
-trap 'rm -f "$TMP_HOST"; rm -rf "${TMP:-}"' EXIT
 step "This machine ($HOST)"
-if [ -f "$HOSTFILE" ]; then
+if [ -f "$HOSTFILE" ] || [ -f "$SRC/hypr/user/hosts/$HOST.lua" ]; then
     ok "Using the saved settings in user/hosts/$HOST.lua"
-elif command -v hyprctl >/dev/null && [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] && command -v jq >/dev/null; then
-    mons=$(hyprctl monitors -j | jq -r 'sort_by(.name | test("^eDP") | not) | .[] | "\(.name)\t\(.description)"')
-    count=$(printf '%s\n' "$mons" | grep -c . || true)
-    info "Detected $count monitor(s):"
-    printf '%s\n' "$mons" | while IFS=$'\t' read -r name desc; do info "  $name  ($desc)"; done
-    if ask "Create a host file for them (workspaces 1-10 split across monitors)?" Y; then
-        {
-            echo "-- Machine-specific settings for $HOST (generated by Syn's Noctalia; edit freely)."
-            echo "-- hyprland.lua calls vars() right after CachyOS's variables, and setup() after everything else."
-            echo; echo "local M = {}"; echo; echo "function M.vars()"
-            i=1; printf '%s\n' "$mons" | while IFS=$'\t' read -r name desc; do echo "    MONITOR$i = \"$name\""; i=$((i + 1)); done
-            echo "    PRIMARY_MONITOR = MONITOR1"; echo "end"; echo
-            echo "function M.setup()"
-            echo "    -- Monitors matched by model, so they work on any port. Adjust mode/position/scale as needed."
-            printf '%s\n' "$mons" | while IFS=$'\t' read -r name desc; do
-                echo "    hl.monitor({ output = \"desc:$desc\", mode = \"preferred\", position = \"auto-right\", scale = \"auto\" })"
-            done
-            echo "    hl.monitor({ output = \"\", mode = \"preferred\", position = \"auto-right\", scale = \"auto\" })"
-            echo
-            echo "    -- Workspaces 1-10 split evenly across monitors"
-            echo "    local mons = {}"
-            echo "    for i = 1, $count do mons[i] = _G[\"MONITOR\" .. i] end"
-            echo "    local per = math.ceil(10 / #mons)"
-            echo "    for ws = 1, 10 do"
-            echo "        local m = math.min(#mons, math.floor((ws - 1) / per) + 1)"
-            echo "        hl.workspace_rule({ workspace = tostring(ws), monitor = mons[m], default = ((ws - 1) % per == 0), persistent = true })"
-            echo "    end"
-            echo "end"; echo; echo "return M"
-        } >"$TMP_HOST"
-    fi
+elif $IN_HYPR && ! $DRY; then
+    "$HOME/.local/bin/syns-host-init" | sed 's/^/    /'
+    info "Tweak it in ~/.config/hypr/user/hosts/$HOST.lua, then copy it into the repo's files/hypr/user/hosts/"
 else
-    warn "Not running inside Hyprland, so monitors can't be detected."
-    info "Everything still works; workspaces follow CachyOS defaults. Re-run this from Hyprland to create a host file."
-fi
-if [ -n "${TMP_HOST:-}" ] && [ -s "$TMP_HOST" ]; then
-    run cp "$TMP_HOST" "$HOSTFILE"; ok "Created user/hosts/$HOST.lua"
+    info "It'll be created automatically from your monitors (and NVIDIA, if present) at first login"
 fi
 
 # ---------- Noctalia settings ----------
@@ -529,7 +568,7 @@ if ask "Install the animated qylock lock screen (replaces Noctalia's lock)?" Y; 
         fi
         sel="quickshell-lockscreen"
         for t in $themes; do
-            if printf ' %s ' "$available" | grep -q " $t "; then sel="$sel themes/$t"
+            if printf ' %s ' "$available" | grep -c " $t " >/dev/null; then sel="$sel themes/$t"
             else warn "Unknown theme '$t', skipped"; fi
         done
         info "Downloading: ${sel#quickshell-lockscreen}"
@@ -577,34 +616,52 @@ fi
 step "Optional system tweaks (need sudo)"
 if [ ! -f /etc/pacman.d/hooks/cachyos-hypr-noctalia-sync.hook ]; then
     if ask "Add a pacman hook that reminds you to run sync-cachyos-config when CachyOS's defaults update?" Y; then
-        run sudo install -Dm644 "$SRC/pacman/cachyos-hypr-noctalia-sync.hook" /etc/pacman.d/hooks/cachyos-hypr-noctalia-sync.hook
+        run "${SUDO[@]}" install -Dm644 "$SRC/pacman/cachyos-hypr-noctalia-sync.hook" /etc/pacman.d/hooks/cachyos-hypr-noctalia-sync.hook
         ok "Hook added"
     fi
 else
     ok "Pacman hook already present"
 fi
-in_i2c=false; id -nG | tr ' ' '\n' | grep -qx i2c && in_i2c=true
-i2c_mod=false; { lsmod 2>/dev/null | grep -q '^i2c_dev'; } && i2c_mod=true
+in_i2c=false; id -nG | tr ' ' '\n' | grep -cx i2c >/dev/null && in_i2c=true
+i2c_mod=false; { lsmod 2>/dev/null | grep -c '^i2c_dev' >/dev/null; } && i2c_mod=true
 if ! $in_i2c || ! $i2c_mod; then
     if ask "Enable external-monitor brightness control (DDC/CI: i2c-dev module + i2c group)?" Y; then
-        run sudo sh -c 'echo i2c-dev > /etc/modules-load.d/i2c-dev.conf'
-        run sudo modprobe i2c-dev
-        getent group i2c >/dev/null || run sudo groupadd --system i2c
-        run sudo usermod -aG i2c "$USER"
+        run "${SUDO[@]}" sh -c 'echo i2c-dev > /etc/modules-load.d/i2c-dev.conf'
+        run "${SUDO[@]}" modprobe i2c-dev
+        getent group i2c >/dev/null || run "${SUDO[@]}" groupadd --system i2c
+        run "${SUDO[@]}" usermod -aG i2c "$USER"
         ok "Enabled (log out and back in for the group change)"
     fi
 else
     ok "DDC/CI brightness already set up"
 fi
 
+# A login manager to start Hyprland from (fresh installs may not have one)
+dm_on=false
+for dm in sddm gdm ly greetd lightdm plasmalogin; do systemctl is-enabled "$dm" >/dev/null 2>&1 && dm_on=true; done
+if ! $dm_on; then
+    if ask "No login manager is enabled. Install and enable SDDM (choose the Hyprland session at login)?" Y; then
+        run "${SUDO[@]}" pacman -S --needed --noconfirm sddm && run "${SUDO[@]}" systemctl enable sddm && ok "SDDM enabled"
+    fi
+else
+    ok "Login manager already enabled"
+fi
+
 # ---------- apply ----------
 step "Applying"
-if command -v hyprctl >/dev/null && [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
+if $IN_HYPR; then
     run hyprctl reload >/dev/null && ok "Hyprland reloaded"
     errs=$($DRY || hyprctl configerrors 2>/dev/null | grep -v '^\s*$' || true)
     [ -n "${errs:-}" ] && warn "Hyprland reported: $errs"
     command -v noctalia >/dev/null && { run noctalia msg config-reload >/dev/null 2>&1 && ok "Noctalia reloaded" || true; }
     pkill -USR1 -x kitty 2>/dev/null || true
+    # Swap a previously running shell for Noctalia without logging out
+    for pat in 'qs -c ii' 'quickshell -c ii' 'qs -c caelestia' 'caelestia shell' 'qs -c dms' 'dms run' 'hyprpanel' 'waybar' 'swaync' 'dunst' 'mako' 'ags run'; do
+        pgrep -f "^$pat" >/dev/null 2>&1 && { run pkill -f "^$pat"; info "Stopped: $pat"; }
+    done
+    if command -v noctalia >/dev/null && ! pgrep -x noctalia >/dev/null; then
+        run hyprctl dispatch 'hl.dsp.exec_cmd("noctalia")' >/dev/null && ok "Noctalia started"
+    fi
     if command -v hypridle >/dev/null && ! pgrep -x hypridle >/dev/null; then
         run hyprctl dispatch 'hl.dsp.exec_cmd("hypridle")' >/dev/null && ok "hypridle started"
     fi
