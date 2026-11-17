@@ -7,7 +7,7 @@ capsule_opacity = 1.0
 capsule_thickness = 0.76000000000000001
 center = [ "wsgroups" ]
 concave_edge_corners = true
-end = [ "media", "spacer_1", "tray", "videowall", "notifications", "network", "volume", "session" ]
+end = [ "media", "spacer_1", "tray", "videowall", "notifications", "network", "volume", "battery", "session" ]
 margin_edge = 0
 margin_ends = 0
 radius_bottom_left = 12
@@ -246,6 +246,11 @@ directory = "@HOME@/Pictures/Wallpapers"
 quota_window = "session"
 type = "felipeartur/ai-usagebar:bar"
 vendor = "anthropic"
+
+[widget.battery]
+display_mode = "graphic"
+show_label = true
+type = "battery"
 
 [widget.clock]
 format = "{:%H:%M  ·  %a %d %b}"

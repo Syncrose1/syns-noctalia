@@ -50,6 +50,7 @@ curl -fsSL https://raw.githubusercontent.com/Syncrose1/syns-noctalia/main/instal
 - AI Usage in the bar (Claude Code, SuperGrok, …) via the `ai-usagebar` plugin; display profiles via the `nwg-displays` plugin (`/nwg` in the launcher)
 - Video and GIF wallpapers via the `mpvpaper` plugin (film icon on the bar): drop files into `~/Pictures/Wallpapers`, shared with still wallpapers. Pauses when covered; slideshows supported. The installer can copy in the video wallpapers from a Wallpaper Engine library
 - Desktop widgets on every monitor: your originals are copied to each connected monitor (re-synced at login and when monitors are plugged in/out)
+- Battery on the bar (charge inside a small battery shape); on desktops it shows the lowest wireless peripheral, or hides
 - Frosted-glass desktop widgets (light grey at 25% plus a Hyprland blur rule) and a glassier blur everywhere: 3 passes with light grain, contrast and colour vibrancy, so shapes stay faintly visible instead of a flat haze
 - Kitty at 85% opacity: **Ctrl+Alt+↑/↓** to adjust, **Ctrl+Alt+0** to reset; closes without confirming
 
