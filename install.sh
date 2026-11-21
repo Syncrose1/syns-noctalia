@@ -259,6 +259,7 @@ check_updates() {
     elif [ -n "$installed" ] && command -v jq >/dev/null \
         && json=$(curl -fsSL -m 6 "https://api.github.com/repos/$REPO/compare/$installed...$latest" 2>/dev/null); then
         local n; n=$(printf '%s' "$json" | jq '.commits | length')
+        if [ "$n" = 0 ]; then update_label="${G}(up to date)${N}"; return 0; fi
         update_label="${Y}($n new change$([ "$n" = 1 ] || echo s))${N}"
         update_list=$(printf '%s' "$json" | jq -r '.commits | reverse | .[:6][] | "- " + (.commit.message | split("\n")[0])')
     else
