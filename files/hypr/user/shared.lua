@@ -123,3 +123,6 @@ local widgets_everywhere = "sleep 2; " .. HOME .. "/.local/bin/desktop-widgets-e
 for _, ev in ipairs({ "hyprland.start", "monitor.added", "monitor.removed" }) do
     hl.on(ev, function () hl.exec_cmd(widgets_everywhere) end)
 end
+
+-- Jump to an app when it asks for attention (e.g. the browser after opening a link), as in end-4
+hl.config({ misc = { focus_on_activate = true } })
