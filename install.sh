@@ -248,11 +248,32 @@ menu_monitors() {
     fi
 }
 
+# What's new on GitHub since this machine's install (best effort; silent when offline)
+update_label="" update_list=""
+check_updates() {
+    local latest installed json
+    latest=$(curl -fsSL -m 6 -H "Accept: application/vnd.github.sha" "https://api.github.com/repos/$REPO/commits/$BRANCH" 2>/dev/null) || return 0
+    installed=$(cat "$STATE/installed-commit" 2>/dev/null || true)
+    if [ "$latest" = "$installed" ]; then
+        update_label="${G}(up to date)${N}"
+    elif [ -n "$installed" ] && command -v jq >/dev/null \
+        && json=$(curl -fsSL -m 6 "https://api.github.com/repos/$REPO/compare/$installed...$latest" 2>/dev/null); then
+        local n; n=$(printf '%s' "$json" | jq '.commits | length')
+        update_label="${Y}($n new change$([ "$n" = 1 ] || echo s))${N}"
+        update_list=$(printf '%s' "$json" | jq -r '.commits | reverse | .[:6][] | "- " + (.commit.message | split("\n")[0])')
+    else
+        update_label="${Y}(update available)${N}"
+    fi
+}
+
+UPDATE=false
 if $INSTALLED && ! $YES && ! $DRY && ! $UNINSTALL && [ -r "$TTY" ]; then
+    check_updates
     while :; do
         printf '\n%sSyn'"'"'s Noctalia%s %sis installed. What would you like to do?%s\n' "$B" "$N" "$D" "$N"
-        info "1) Change the lock screen theme (preview, switch, download more)"
-        info "2) Update / reinstall Syn's Noctalia (latest from GitHub; backs up first)"
+        info "1) Update Syn's Noctalia $update_label"
+        [ -n "$update_list" ] && printf '%s\n' "$update_list" | sed "s/^/         $D/; s/$/$N/"
+        info "2) Change the lock screen theme (preview, switch, download more)"
         info "3) Pull CachyOS's latest default config"
         info "4) Arrange monitors"
         info "5) Show keyboard shortcuts and Syn's commands"
@@ -260,8 +281,8 @@ if $INSTALLED && ! $YES && ! $DRY && ! $UNINSTALL && [ -r "$TTY" ]; then
         info "q) Quit"
         printf '    %s?%s Choice: ' "$Y" "$N" >"$TTY"
         case "$(read_tty)" in
-            1) menu_lock ;;
-            2) break ;;
+            1) UPDATE=true; YES=true; break ;;   # update: take the defaults (keeps wallpaper picks; sudo still asks)
+            2) menu_lock ;;
             3) menu_sync ;;
             4) menu_monitors ;;
             5) menu_keys ;;
@@ -686,7 +707,15 @@ else
     info "Log in to the Hyprland session to see everything."
 fi
 
-$DRY || { mkdir -p "$STATE"; date -Is >"$STATE/installed"; }
+if ! $DRY; then
+    mkdir -p "$STATE"; date -Is >"$STATE/installed"
+    if [ "$SRC" = "${script_dir:-}/files" ] && git -C "$script_dir" rev-parse HEAD >/dev/null 2>&1; then
+        git -C "$script_dir" rev-parse HEAD >"$STATE/installed-commit"
+    else
+        curl -fsSL -m 6 -H "Accept: application/vnd.github.sha" "https://api.github.com/repos/$REPO/commits/$BRANCH" \
+            >"$STATE/installed-commit.tmp" 2>/dev/null && mv "$STATE/installed-commit.tmp" "$STATE/installed-commit" || rm -f "$STATE/installed-commit.tmp"
+    fi
+fi
 
 printf '\n%sDone.%s Tap Super for the launcher, Super+Z for Noctalia settings, Ctrl+Alt+Del for the session menu.\n' "$G$B" "$N"
 printf '%sRun the same one-line command any time for the menu (lock themes, updates, shortcuts, restore)%s\n' "$D" "$N"
