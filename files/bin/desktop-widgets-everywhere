@@ -41,6 +41,17 @@ def flat(prefix, table):
             yield f'{prefix}.{k}', v
 
 
+def misplaced(names):
+    """Copies Noctalia moved off their monitor: when a screen is plugged in, Noctalia can see it
+    a moment after Hyprland does, and moves widgets set for it onto another screen meanwhile."""
+    try:
+        widgets = tomllib.loads(sh("noctalia", "msg", "config-get", "desktop_widgets")).get("widget", {})
+    except Exception:
+        return []
+    return [w for w, v in widgets.items() if "@" in w and w.split("@", 1)[1] in names
+            and v.get("enabled", True) and v.get("output") != w.split("@", 1)[1]]
+
+
 def main():
     # Wait for Hyprland and Noctalia (this also runs at login, before they're fully up)
     for _ in range(30):
@@ -93,6 +104,16 @@ def main():
         else:
             subprocess.run(["noctalia", "msg", "config-set", path, toml_value(v)], capture_output=True, check=False)
     if not DRY:
+        # Check it stuck (see misplaced()); try again a few times if not
+        for _ in range(5):
+            time.sleep(2)
+            bad = misplaced(names)
+            if not bad:
+                break
+            for path, v in sets:
+                subprocess.run(["noctalia", "msg", "config-set", path, toml_value(v)], capture_output=True, check=False)
+        else:
+            print(f"Some widget copies wouldn't stay on their monitor: {', '.join(misplaced(names))}", file=sys.stderr)
         copies = len([w for w in new_order if "@" in w and w.split("@", 1)[1] in names])
         print(f"Desktop widgets: {len(masters)} on {main_mon if len(names) == 1 else 'every monitor'} ({copies} cop{'y' if copies == 1 else 'ies'}) across {', '.join(names)}")
 

@@ -22,11 +22,7 @@ function M.setup()
     hl.monitor({ output = "DP-1", mode = "3440x1440@165.0", position = "auto-left", scale = 1 })
     hl.monitor({ output = "", mode = "preferred", position = "auto-right", scale = "auto" })
 
-    -- Workspaces: 1-5 on the 1080p screen, 6-10 on the ultrawide (they fall back to the
-    -- 1080p screen when the ultrawide isn't connected); always shown
-    for i = 1, 10 do
-        hl.workspace_rule({ workspace = tostring(i), monitor = (i <= 5) and MONITOR1 or MONITOR2, default = (i == 1 or i == 6), persistent = true })
-    end
+    -- Workspaces: 1-5 on the 1080p screen, 6-10 on the ultrawide when connected (user/shared.lua)
 
     -- Personal apps and projects on this PC
     hl.bind("SUPER + R", hl.dsp.exec_cmd("obsidian"), { description = "Open Obsidian" })

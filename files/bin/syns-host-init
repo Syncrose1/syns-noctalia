@@ -60,14 +60,7 @@ out=$(
     printf '%s' "$mons" | jq -r '.[] | "    hl.monitor({ output = \"desc:\(.description)\", mode = \"\(.width)x\(.height)@\(.refreshRate * 100 | round / 100)\", position = \"auto-right\", scale = \(.scale) })"'
     echo "    hl.monitor({ output = \"\", mode = \"preferred\", position = \"auto-right\", scale = \"auto\" })"
     echo
-    echo "    -- Workspaces 1-10 split evenly across monitors, always shown"
-    echo "    local mons = {}"
-    echo "    for i = 1, $count do mons[i] = _G[\"MONITOR\" .. i] end"
-    echo "    local per = math.ceil(10 / #mons)"
-    echo "    for ws = 1, 10 do"
-    echo "        local m = math.min(#mons, math.floor((ws - 1) / per) + 1)"
-    echo "        hl.workspace_rule({ workspace = tostring(ws), monitor = mons[m], default = ((ws - 1) % per == 0), persistent = true })"
-    echo "    end"
+    echo "    -- Workspaces 1-10 are split across whatever monitors are connected (user/shared.lua)"
     echo "end"
     echo
     echo "return M"

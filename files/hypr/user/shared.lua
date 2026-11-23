@@ -37,6 +37,8 @@ if exists(HOME .. "/.local/bin/revise") then
     hl.bind("SUPER + SHIFT + Y", hl.dsp.exec_cmd("~/.local/bin/revise again"), { description = "Revise: reopen this block" })
     hl.bind("SUPER + CTRL + Y", hl.dsp.exec_cmd("~/.local/bin/revise later"), { description = "Revise: move today's subject to tomorrow" })
 end
+-- HELIOS (only on machines that have it): its installer owns user/helios.lua, so updates here never clobber it
+if exists(HOME .. "/.config/hypr/user/helios.lua") then dofile(HOME .. "/.config/hypr/user/helios.lua") end
 -- Scroll direction for workspace switching, as before
 hl.unbind("SUPER + mouse_up")
 hl.unbind("SUPER + mouse_down")
@@ -122,6 +124,62 @@ end
 local widgets_everywhere = "sleep 2; " .. HOME .. "/.local/bin/desktop-widgets-everywhere"
 for _, ev in ipairs({ "hyprland.start", "monitor.added", "monitor.removed" }) do
     hl.on(ev, function () hl.exec_cmd(widgets_everywhere) end)
+end
+
+-- Workspaces follow whatever monitors are plugged in, on any port (HDMI, USB-C, a dock...):
+-- 1-10 are split across the main screen first, then the others left to right (two screens =
+-- 1-5 and 6-10). Unplugging moves a screen's workspaces, windows and all, to the ones left.
+-- Runs at login and on every plug/unplug. Main screen = PRIMARY_MONITOR (a port or "desc:"
+-- name from the host file) when connected, else a built-in panel, else the leftmost.
+local ws_rules = {}
+function SYNS_PLACE_WORKSPACES()
+    local mons = {}
+    for _, m in ipairs(hl.get_monitors()) do
+        if m.enabled ~= false and not m.is_mirror then mons[#mons + 1] = m end
+    end
+    if #mons == 0 then return end
+    local function is_main(m)
+        local p = PRIMARY_MONITOR or ""
+        return p ~= "" and (m.name == p or (p:sub(1, 5) == "desc:" and m.description:find(p:sub(6), 1, true) == 1))
+    end
+    local function rank(m)
+        if is_main(m) then return 0 end
+        if m.name:match("^eDP") or m.name:match("^LVDS") or m.name:match("^DSI") then return 1 end
+        return 2
+    end
+    table.sort(mons, function (a, b)
+        if rank(a) ~= rank(b) then return rank(a) < rank(b) end
+        if a.x ~= b.x then return a.x < b.x end
+        return a.y < b.y
+    end)
+
+    local focused = hl.get_active_workspace()
+    local per = math.ceil(10 / #mons)
+    for _, r in ipairs(ws_rules) do pcall(function () r:set_enabled(false) end) end
+    ws_rules = {}
+    for ws = 1, 10 do
+        local mon = mons[math.min(#mons, math.floor((ws - 1) / per) + 1)]
+        ws_rules[#ws_rules + 1] = hl.workspace_rule({ workspace = tostring(ws), monitor = mon.name, default = ((ws - 1) % per == 0), persistent = true })
+        local w = hl.get_workspace(tostring(ws))
+        if w and w.monitor and w.monitor.name ~= mon.name then
+            hl.dispatch(hl.dsp.workspace.move({ workspace = tostring(ws), monitor = mon.name }))
+        end
+    end
+    -- Show each screen its first workspace if it's sitting on a stray one (e.g. 11), and put
+    -- focus back where it was
+    for i, mon in ipairs(mons) do
+        local first = (i - 1) * per + 1
+        local cur = mon.active_workspace
+        if first <= 10 and cur and cur.id and (cur.id > 10 or cur.id < 1) then
+            hl.dispatch(hl.dsp.focus({ monitor = mon.name }))
+            hl.dispatch(hl.dsp.focus({ workspace = tostring(first) }))
+        end
+    end
+    if focused and focused.name then hl.dispatch(hl.dsp.focus({ workspace = focused.name })) end
+end
+for _, ev in ipairs({ "hyprland.start", "monitor.added", "monitor.removed" }) do
+    -- Delayed slightly so Hyprland has finished setting the monitor up
+    hl.on(ev, function () hl.exec_cmd("sleep 1; hyprctl eval 'SYNS_PLACE_WORKSPACES()'") end)
 end
 
 -- Jump to an app when it asks for attention (e.g. the browser after opening a link), as in end-4
