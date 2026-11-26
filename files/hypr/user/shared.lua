@@ -184,3 +184,7 @@ end
 
 -- Jump to an app when it asks for attention (e.g. the browser after opening a link), as in end-4
 hl.config({ misc = { focus_on_activate = true } })
+
+-- No Hyprland default wallpapers or mascot (Raahat, 26 Nov 2026: one showed at boot in a lecture):
+-- a plain background until the real wallpaper loads, and no splash text.
+hl.config({ misc = { disable_hyprland_logo = true, disable_splash_rendering = true, force_default_wallpaper = 0 } })
